@@ -1,14 +1,14 @@
 use chess::{Board, ChessMove, Color, File, Piece, Rank, Square};
 use mdbook::book::{Book, BookItem, Chapter};
 use mdbook::errors::Error as MdBookError;
-use mdbook::preprocess::{CmdPreprocessor, Preprocessor, PreprocessorContext};
+use mdbook::preprocess::PreprocessorContext;
 use pulldown_cmark::{CodeBlockKind, CowStr, Event, Parser, Tag};
 use pulldown_cmark_to_cmark::cmark;
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::path::Path;
+
 use std::str::FromStr;
-use std::{fmt, fs, io};
+use std::{fmt};
 use tracing::{error, info};
 
 /// A constant X axis offset to apply to all pieces (and pawns).
@@ -107,7 +107,7 @@ pub fn generate_board(board: &Board) -> String {
 }
 
 /// Run mdbook-chess on an mdbook replacing all chess blocks with SVGs
-pub fn run_preprocessor(ctx: &PreprocessorContext, mut book: Book) -> Result<Book, MdBookError> {
+pub fn run_preprocessor(_ctx: &PreprocessorContext, mut book: Book) -> Result<Book, MdBookError> {
     // No settings so we'll skip
     book.for_each_mut(|item| {
         if let BookItem::Chapter(chapter) = item {

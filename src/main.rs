@@ -1,11 +1,11 @@
 use chess_preproc::*;
 use clap::{App, Arg, ArgMatches};
-use mdbook::book::Book;
+
 use mdbook::errors::Error;
-use mdbook::preprocess::{CmdPreprocessor, Preprocessor, PreprocessorContext};
+use mdbook::preprocess::{CmdPreprocessor};
 use semver::{Version, VersionReq};
 use std::{env, io, process};
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::{Layer, Registry};
 
