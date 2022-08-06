@@ -1,9 +1,5 @@
 # Chapter 1
 
-```chess
-
-```
-
 Lets look at the Caro-Kann defense. First lets create a new board
 
 ```chess
