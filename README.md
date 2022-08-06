@@ -26,6 +26,8 @@ title = "mdbook-chess"
 [preprocessor.chess]
 ```
 
+For an example book just look to the provided [demo-book](./demo-book).
+
 # Usage
 
 Currently the chess boards are specified via a very simple YAML structure. With
