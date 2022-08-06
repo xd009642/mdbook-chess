@@ -3,8 +3,8 @@ use std::path::Path;
 use std::str::FromStr;
 use std::{fs, io};
 
-const X_OFFSET: f32 = -0.6;
-const Y_OFFSET: f32 = 0.0;
+const X_OFFSET: f32 = 0.6;
+const Y_OFFSET: f32 = 0.3;
 
 const fn get_board() -> &'static str {
     include_str!("../res/board.svg")

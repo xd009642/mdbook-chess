@@ -9,13 +9,13 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="78.700005mm"
+   width="80mm"
    height="80mm"
-   viewBox="0 0 78.700005 80"
+   viewBox="0 0 80 80"
    version="1.1"
    id="svg8"
    inkscape:version="0.92.3 (2405546, 2018-03-11)"
-   sodipodi:docname="drawing.svg">
+   sodipodi:docname="board.svg">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -26,15 +26,15 @@
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.979899"
-     inkscape:cx="-72.993465"
-     inkscape:cy="201.09097"
+     inkscape:cx="184.22883"
+     inkscape:cy="181.90317"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="1853"
-     inkscape:window-height="1025"
-     inkscape:window-x="67"
-     inkscape:window-y="27"
+     inkscape:window-width="1920"
+     inkscape:window-height="1052"
+     inkscape:window-x="1920"
+     inkscape:window-y="0"
      inkscape:window-maximized="1"
      fit-margin-top="0"
      fit-margin-left="-1.3"
@@ -58,454 +58,236 @@
      id="layer1"
      transform="translate(-1.3367304,-0.03395404)">
     <rect
+       id="rect3713-3-2-0-9-3"
+       width="80.000008"
+       height="80.291901"
+       x="1.3730781"
+       y="-0.25795004"
+       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.51720124" />
+    <rect
        id="rect3713"
        width="10"
        height="10"
-       x="0.036753323"
+       x="1.373101"
        y="0.033954043"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3"
-       width="10"
-       height="10"
-       x="10.036752"
-       y="0.033954043"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-6"
        width="10"
        height="10"
-       x="20.036745"
+       x="21.373093"
        y="0.033954043"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-7"
-       width="10"
-       height="10"
-       x="30.036745"
-       y="0.033954043"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-5"
        width="10"
        height="10"
-       x="40.036739"
+       x="41.373089"
        y="0.033954043"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-3"
-       width="10"
-       height="10"
-       x="50.036732"
-       y="0.033954043"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-6-5"
        width="10"
        height="10"
-       x="60.036732"
+       x="61.373081"
        y="0.033954043"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-7-6"
-       width="10"
-       height="10"
-       x="70.036736"
-       y="0.033954043"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-9"
        width="10"
        height="10"
-       x="10.036744"
+       x="11.373092"
        y="10.033952"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-1"
-       width="10"
-       height="10"
-       x="20.036745"
-       y="10.033952"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-6-2"
        width="10"
        height="10"
-       x="30.036745"
+       x="31.373093"
        y="10.033952"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-7-7"
-       width="10"
-       height="10"
-       x="40.036739"
-       y="10.033952"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-5-0"
        width="10"
        height="10"
-       x="50.036732"
+       x="51.373081"
        y="10.033952"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-3-9"
-       width="10"
-       height="10"
-       x="60.036732"
-       y="10.033952"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-6-5-3"
        width="10"
        height="10"
-       x="70.036736"
+       x="71.373085"
        y="10.033952"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-2-0"
-       width="10"
-       height="10"
-       x="0.036753323"
-       y="10.033952"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-62"
        width="10"
        height="10"
-       x="0.036745694"
+       x="1.3730934"
        y="20.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-6"
-       width="10"
-       height="10"
-       x="10.036744"
-       y="20.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-6-1"
        width="10"
        height="10"
-       x="20.03673"
+       x="21.373077"
        y="20.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-7-8"
-       width="10"
-       height="10"
-       x="30.03673"
-       y="20.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-5-7"
        width="10"
        height="10"
-       x="40.036724"
+       x="41.373074"
        y="20.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-3-92"
-       width="10"
-       height="10"
-       x="50.036732"
-       y="20.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-6-5-0"
        width="10"
        height="10"
-       x="60.036732"
+       x="61.373081"
        y="20.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-7-6-2"
-       width="10"
-       height="10"
-       x="70.036736"
-       y="20.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-9-3"
        width="10"
        height="10"
-       x="10.036729"
+       x="11.373076"
        y="30.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-1-7"
-       width="10"
-       height="10"
-       x="20.03673"
-       y="30.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-6-2-5"
        width="10"
        height="10"
-       x="30.03673"
+       x="31.373077"
        y="30.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-7-7-9"
-       width="10"
-       height="10"
-       x="40.036724"
-       y="30.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-5-0-2"
        width="10"
        height="10"
-       x="50.036732"
+       x="51.373081"
        y="30.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-3-9-2"
-       width="10"
-       height="10"
-       x="60.036732"
-       y="30.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-6-5-3-8"
        width="10"
        height="10"
-       x="70.036736"
+       x="71.373085"
        y="30.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-2-0-9"
-       width="10"
-       height="10"
-       x="0.036745694"
-       y="30.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-7"
        width="10"
        height="10"
-       x="0.036745694"
+       x="1.3730934"
        y="40.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-36"
-       width="10"
-       height="10"
-       x="10.036744"
-       y="40.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-6-12"
        width="10"
        height="10"
-       x="20.03673"
+       x="21.373077"
        y="40.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-7-9"
-       width="10"
-       height="10"
-       x="30.036745"
-       y="40.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-5-3"
        width="10"
        height="10"
-       x="40.036724"
+       x="41.373074"
        y="40.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-3-1"
-       width="10"
-       height="10"
-       x="50.036732"
-       y="40.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-6-5-9"
        width="10"
        height="10"
-       x="60.036732"
+       x="61.373081"
        y="40.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-7-6-4"
-       width="10"
-       height="10"
-       x="70.036736"
-       y="40.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-9-7"
        width="10"
        height="10"
-       x="10.036729"
+       x="11.373076"
        y="50.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-1-8"
-       width="10"
-       height="10"
-       x="20.03673"
-       y="50.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-6-2-4"
        width="10"
        height="10"
-       x="30.036745"
+       x="31.373093"
        y="50.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-7-7-5"
-       width="10"
-       height="10"
-       x="40.036724"
-       y="50.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-5-0-0"
        width="10"
        height="10"
-       x="50.036732"
+       x="51.373081"
        y="50.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-3-9-3"
-       width="10"
-       height="10"
-       x="60.036732"
-       y="50.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-6-5-3-6"
        width="10"
        height="10"
-       x="70.036736"
+       x="71.373085"
        y="50.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-2-0-1"
-       width="10"
-       height="10"
-       x="0.036745694"
-       y="50.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-62-0"
        width="10"
        height="10"
-       x="0.036730435"
+       x="1.3730781"
        y="60.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-6-6"
-       width="10"
-       height="10"
-       x="10.036729"
-       y="60.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-6-1-3"
        width="10"
        height="10"
-       x="20.036715"
+       x="21.373062"
        y="60.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-7-8-2"
-       width="10"
-       height="10"
-       x="30.036715"
-       y="60.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-5-7-0"
        width="10"
        height="10"
-       x="40.036709"
+       x="41.373058"
        y="60.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-3-92-6"
-       width="10"
-       height="10"
-       x="50.036732"
-       y="60.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-6-5-0-1"
        width="10"
        height="10"
-       x="60.036732"
+       x="61.373081"
        y="60.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-7-6-2-5"
-       width="10"
-       height="10"
-       x="70.036736"
-       y="60.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-9-3-5"
        width="10"
        height="10"
-       x="10.036714"
+       x="11.373061"
        y="70.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-1-7-4"
-       width="10"
-       height="10"
-       x="20.036715"
-       y="70.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-6-2-5-7"
        width="10"
        height="10"
-       x="30.036715"
+       x="31.373062"
        y="70.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-7-7-9-6"
-       width="10"
-       height="10"
-       x="40.036709"
-       y="70.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-5-0-2-5"
        width="10"
        height="10"
-       x="50.036732"
+       x="51.373081"
        y="70.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-3-9-2-6"
-       width="10"
-       height="10"
-       x="60.036732"
-       y="70.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
     <rect
        id="rect3713-6-5-3-8-9"
        width="10"
        height="10"
-       x="70.036736"
+       x="71.373085"
        y="70.033951"
        style="fill:#d18b47;fill-opacity:1;stroke-width:0.06453253" />
-    <rect
-       id="rect3713-3-2-0-9-3"
-       width="10"
-       height="10"
-       x="0.036730435"
-       y="70.033951"
-       style="fill:#ffce9e;fill-opacity:1;stroke-width:0.06453253" />
   </g>
-<!-- PIECES -->
-
+  <!-- PIECES -->
 </svg>
