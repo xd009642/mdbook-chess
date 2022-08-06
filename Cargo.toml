@@ -1,9 +1,11 @@
 [package]
 name = "mdbook-chess"
+description = "An mdbook preprocessing plugin to generate chess boards"
+readme = "README.md"
+license = "MIT/Apache-2.0"
+keywords = ["chess", "mdbook", "markdown"]
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 chess = "3.2.0"
