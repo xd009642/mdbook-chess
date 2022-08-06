@@ -4,7 +4,10 @@ use mdbook::book::Book;
 use mdbook::errors::Error;
 use mdbook::preprocess::{CmdPreprocessor, Preprocessor, PreprocessorContext};
 use semver::{Version, VersionReq};
-use std::{io, process};
+use std::{env, io, process};
+use tracing::{error, info, warn};
+use tracing_subscriber::filter::EnvFilter;
+use tracing_subscriber::{Layer, Registry};
 
 mod chess_preproc;
 
@@ -18,13 +21,30 @@ pub fn make_app() -> App<'static> {
         )
 }
 
+fn setup_logging() -> Result<(), Box<dyn std::error::Error>> {
+    let filter = match env::var("RUST_LOG") {
+        Ok(_) => EnvFilter::from_default_env(),
+        _ => EnvFilter::new("mdbook_chess=info"),
+    };
+
+    let fmt = tracing_subscriber::fmt::Layer::default().with_writer(io::stderr);
+
+    let subscriber = filter.and_then(fmt).with_subscriber(Registry::default());
+
+    tracing::subscriber::set_global_default(subscriber)?;
+    Ok(())
+}
+
 fn main() {
+    if let Err(e) = setup_logging() {
+        eprintln!("Failed to setup tracing logging: {}", e);
+    }
     let matches = make_app().get_matches();
 
     if let Some(sub_args) = matches.subcommand_matches("supports") {
         handle_supports(sub_args);
     } else if let Err(e) = handle_preprocessing() {
-        eprintln!("{}", e);
+        info!("{}", e);
         process::exit(1);
     }
 }
@@ -36,7 +56,7 @@ fn handle_preprocessing() -> Result<(), Error> {
     let version_req = VersionReq::parse(mdbook::MDBOOK_VERSION)?;
 
     if !version_req.matches(&book_version) {
-        eprintln!(
+        warn!(
             "Warning: The {} plugin was built against version {} of mdbook, \
              but we're being called from version {}",
             PREPROCESSOR_NAME,
@@ -44,7 +64,7 @@ fn handle_preprocessing() -> Result<(), Error> {
             ctx.mdbook_version
         );
     }
-    eprintln!("Processing!");
+    info!("Processing!");
 
     let processed_book = run_preprocessor(&ctx, book).expect("FUCK1");
     let s = serde_json::to_string(&processed_book).expect("FUCK");

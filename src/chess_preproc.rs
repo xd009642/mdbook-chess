@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::str::FromStr;
 use std::{fmt, fs, io};
+use tracing::{error, info};
 
 /// A constant X axis offset to apply to all pieces (and pawns).
 const X_OFFSET: f32 = 0.6;
@@ -110,7 +111,7 @@ pub fn run_preprocessor(ctx: &PreprocessorContext, mut book: Book) -> Result<Boo
         if let BookItem::Chapter(chapter) = item {
             let _ = process_code_blocks(chapter).map(|s| {
                 chapter.content = s;
-                eprintln!("chapter '{}' processed", chapter.name);
+                info!("chapter '{}' processed", chapter.name);
             });
         }
     });
@@ -154,7 +155,7 @@ fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Stri
                 Some(s) => match Board::from_str(s) {
                     Ok(b) => b,
                     Err(e) => {
-                        eprintln!("Invalid FEN String: {}", e);
+                        error!("Invalid FEN String: {}", e);
                         return get_board().to_string();
                     }
                 },
@@ -174,7 +175,7 @@ fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Stri
                         board = new_board;
                     }
                     Err(_) => {
-                        eprintln!("{} is an invalid SAN move", m);
+                        error!("{} is an invalid SAN move", m);
                         return get_board().to_string();
                     }
                 }
@@ -192,7 +193,7 @@ fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Stri
             generate_board(&board)
         }
         Err(e) => {
-            eprintln!("Invalid YAML: {}", e);
+            error!("Creating default board invalid YAML: {}", e);
             // We got nothing, lets just pop a default board
             generate_board(&Board::default())
         }

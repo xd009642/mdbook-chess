@@ -15,3 +15,5 @@ semver = "1.0.13"
 serde = { version = "1.0.142", features = ["derive"] }
 serde_json = "1.0.83"
 serde_yaml = "0.9.4"
+tracing = { version = "0.1.36", features = ["std"], default-features = false }
+tracing-subscriber = { version = "0.3.15", features = ["env-filter", "smallvec", "fmt", "ansi", "std"], default-features = false }

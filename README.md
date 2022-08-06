@@ -41,6 +41,31 @@ save: ["ck-main", "ck-2", "ck-3"]
 moves: ["e4", "c6", "d4", "d5"]
 ``` 
 
+Generally, if there's a syntax error in the markdown there's a reasonable
+chance you'll see a bunch of SVG text dumped into the book. If this happens
+read the log messages and hopefully an answer will be gleaned.
+
+# Roadmap
+
+# Potential future features
+
+These are features I'd be willing to do if there was demand and they were
+sufficiently easy or willing to accept PRs for.
+
+* GIF generation
+* Move arrows
+* Styling and theming
+* More layout options in page
+* Rank and file labels
+
+# Unlikely features
+
+These are features where they will only be added via PR but the PR may
+not be accepted
+
+* Chess variants
+* Eval bar
+
 # License and Copyright
 
 All chess SVGs were created by Wikimedia user Cburnett and are CC BY-SA 3.0
