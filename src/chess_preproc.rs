@@ -22,6 +22,7 @@ const fn true_value() -> bool {
     true
 }
 
+/// To allow for `field = "hello"` or `field = ["hello", "world"]` in YAML
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 pub enum ManyOrOne {
@@ -49,6 +50,7 @@ pub struct BoardBlock {
     /// Moves to apply to the board
     #[serde(default)]
     moves: Vec<String>,
+    /// Whether to replace saved board with this update to it.
     #[serde(default = "true_value")]
     overwrite: bool,
 }
