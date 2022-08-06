@@ -2,6 +2,12 @@
 
 WIP But stick chess games into mdbook
 
+# Usage
+
+```chess
+Board: default
+```
+
 # License and Copyright
 
 All chess SVGs were created by Wikimedia user Cburnett and are CC BY-SA 3.0

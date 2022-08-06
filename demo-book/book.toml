@@ -1,0 +1,9 @@
+[book]
+authors = ["xd009642"]
+language = "en"
+multilingual = false
+src = "src"
+title = "mdbook-chess"
+
+[preprocessor.chess]
+
