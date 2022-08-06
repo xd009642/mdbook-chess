@@ -12,17 +12,21 @@ Currently the chess boards are specified via a very simple YAML structure. With
 * moves - list of moves
 * overwrite - boolean of whether to overwrite saved version of the board with these moves
 
-So we can create a starting board like:
+So we can create a starting board like using a code block with the language set to chess. Like:
 
-```chess
-load: start
-```
+
+    ```chess
+    load: start
+    ``` 
 
 Or like:
 
-```chess
-# mdbook seems to hate empty code blocks so have at least a blank line
-```
+    ```chess
+    # mdbook seems to hate empty code blocks so have at least a blank line
+    ```
+
+_For brevity/formating the backticks and "chess" language specifier will be omitted
+for future examples._
 
 Of course if we want to refer to this board later we need to save it. So we can
 create a board with a name to refer to it later as so:
