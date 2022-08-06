@@ -4,6 +4,28 @@ Create chess boards in your mdbooks!
 
 ![A chess board in starting position](./doc/demo_image.png)
 
+# Installation
+
+Simply:
+
+```
+cargo install mdbook-chess
+```
+
+And then add to your mdbook project as so:
+
+```
+# book.toml
+[book]
+authors = ["xd009642"]
+language = "en"
+multilingual = false
+src = "src"
+title = "mdbook-chess"
+
+[preprocessor.chess]
+```
+
 # Usage
 
 Currently the chess boards are specified via a very simple YAML structure. With
