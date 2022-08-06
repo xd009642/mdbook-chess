@@ -1,13 +1,27 @@
-use chess::{Board, Color, File, Piece, Rank, Square};
+use chess::{Board, ChessMove, Color, File, Piece, Rank, Square};
 use mdbook::book::{Book, BookItem, Chapter};
 use mdbook::errors::Error as MdBookError;
 use mdbook::preprocess::{CmdPreprocessor, Preprocessor, PreprocessorContext};
 use pulldown_cmark::{CodeBlockKind, CowStr, Event, Parser, Tag};
 use pulldown_cmark_to_cmark::cmark;
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::Path;
 use std::str::FromStr;
 use std::{fmt, fs, io};
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct BoardBlock {
+    /// The name we want to refer to this board by as we mutate it
+    name: Option<String>,
+    /// This lets us go back to it in future
+    checkpoint: Option<String>,
+    /// If we're creating a new board
+    board: Option<String>,
+    /// Moves to apply to the board
+    #[serde(default)]
+    moves: Vec<String>,
+}
 
 const X_OFFSET: f32 = 0.6;
 const Y_OFFSET: f32 = 0.3;
@@ -92,6 +106,7 @@ fn process_code_blocks(chapter: &mut Chapter) -> Result<String, fmt::Error> {
     use Tag::{CodeBlock, Paragraph};
 
     let mut boards = HashMap::new();
+    let mut checkpoints = HashMap::new();
 
     let mut output = String::with_capacity(chapter.content.len());
     let mut inside_block = false;
@@ -102,7 +117,7 @@ fn process_code_blocks(chapter: &mut Chapter) -> Result<String, fmt::Error> {
         }
         (Text(Borrowed(text)), true) => {
             inside_block = false;
-            Html(generate_board_svg(text, &mut boards).into())
+            Html(generate_board_svg(text, &mut boards, &mut checkpoints).into())
         }
         (End(CodeBlock(Fenced(Borrowed("chess")))), false) => End(Paragraph),
         _ => e,
@@ -111,19 +126,62 @@ fn process_code_blocks(chapter: &mut Chapter) -> Result<String, fmt::Error> {
     cmark(events, &mut output).map(|_| output)
 }
 
-fn generate_board_svg(input: &str, boards: &mut HashMap<String, Board>) -> String {
-    let mut active_board = None;
-    for line in input.lines() {
-        if let Some(board) = line.strip_prefix("Board:").map(|x| x.trim()) {
-            if board == "default" {
-                return generate_board(&Board::default());
-            } else {
-                active_board = boards.get_mut(board);
+fn generate_board_svg(
+    input: &str,
+    boards: &mut HashMap<String, Board>,
+    checkpoints: &mut HashMap<String, Board>,
+) -> String {
+    match serde_yaml::from_str::<BoardBlock>(input) {
+        Ok(block) => {
+            eprintln!("I'm doing this for ya: {:?}", block);
+            let name = block.name.clone();
+            let mut board = match block.board.as_deref() {
+                Some("start") => Board::default(),
+                Some(s) => match Board::from_str(s) {
+                    Ok(b) => b,
+                    Err(e) => {
+                        eprintln!("Invalid FEN String: {}", e);
+                        return get_board().to_string();
+                    }
+                },
+                None => {
+                    let res = name
+                        .as_ref()
+                        .and_then(|name| boards.get(name).or_else(|| checkpoints.get(name)))
+                        .cloned();
+                    match res {
+                        Some(b) => b,
+                        None => Board::default(),
+                    }
+                }
+            };
+
+            for m in &block.moves {
+                match ChessMove::from_san(&board, m.as_str()) {
+                    Ok(chess_move) => {
+                        let new_board = board.make_move_new(chess_move);
+                        board = new_board;
+                    }
+                    Err(_) => {
+                        eprintln!("{} is an invalid SAN move", m);
+                        return get_board().to_string();
+                    }
+                }
             }
+            if let Some(s) = block.checkpoint.as_ref() {
+                checkpoints.insert(s.clone(), board.clone());
+            }
+            if let Some(name) = name.clone() {
+                boards.insert(name, board.clone());
+            }
+            generate_board(&board)
+        }
+        Err(e) => {
+            eprintln!("Invalid YAML: {}", e);
+            // We got nothing, lets just pop an empty board there:
+            get_board().to_string()
         }
     }
-    // We got nothing, lets just pop an empty board there:
-    get_board().to_string()
 }
 
 #[cfg(test)]

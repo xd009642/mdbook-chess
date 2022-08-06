@@ -47,7 +47,6 @@ fn handle_preprocessing() -> Result<(), Error> {
     let processed_book = run_preprocessor(&ctx, book).expect("FUCK1");
     let s = serde_json::to_string(&processed_book).expect("FUCK");
     println!("{}", s);
-    eprintln!("{}", s);
     Ok(())
 }
 

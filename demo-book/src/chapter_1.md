@@ -3,13 +3,30 @@
 Lets make a default board!
 
 ```chess
-Board: default
+name: game
+board: start
 ```
 
-If we don't put anything we get an invalid board:
+And play the move e4, but save a checkpoint.
 
 ```chess
+name: game
+checkpoint: other
+moves: ["e4"]
+```
 
+Player plays and we match
+
+```chess
+name: game
+moves: ["e5", "d4"]
+```
+
+Or they could have done e5
+
+```chess
+name: other
+moves: ["d5"]
 ```
 
 
