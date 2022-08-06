@@ -1,10 +1,12 @@
+use chess_preproc::*;
 use clap::{App, Arg, ArgMatches};
 use mdbook::book::Book;
 use mdbook::errors::Error;
 use mdbook::preprocess::{CmdPreprocessor, Preprocessor, PreprocessorContext};
-use mdbook_chess::*;
 use semver::{Version, VersionReq};
 use std::{io, process};
+
+mod chess_preproc;
 
 pub fn make_app() -> App<'static> {
     App::new(PREPROCESSOR_NAME)

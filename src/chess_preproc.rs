@@ -10,27 +10,54 @@ use std::path::Path;
 use std::str::FromStr;
 use std::{fmt, fs, io};
 
+/// A constant X axis offset to apply to all pieces (and pawns).
+const X_OFFSET: f32 = 0.6;
+/// A constant Y axis offset to apply to all pieces (and pawns).
+const Y_OFFSET: f32 = 0.3;
+/// The name of the plugin.
+pub const PREPROCESSOR_NAME: &'static str = "mdbook-chess";
+
+const fn true_value() -> bool {
+    true
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum ManyOrOne {
+    One(String),
+    Many(Vec<String>),
+}
+
+impl ManyOrOne {
+    fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &'a String> + 'a> {
+        match self {
+            Self::One(s) => Box::new(std::iter::once(s)),
+            Self::Many(s) => Box::new(s.iter()),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct BoardBlock {
     /// The name we want to refer to this board by as we mutate it
-    name: Option<String>,
+    load: Option<String>,
     /// This lets us go back to it in future
-    checkpoint: Option<String>,
+    save: Option<ManyOrOne>,
     /// If we're creating a new board
     board: Option<String>,
     /// Moves to apply to the board
     #[serde(default)]
     moves: Vec<String>,
+    #[serde(default = "true_value")]
+    overwrite: bool,
 }
 
-const X_OFFSET: f32 = 0.6;
-const Y_OFFSET: f32 = 0.3;
-pub const PREPROCESSOR_NAME: &'static str = "mdbook-chess";
-
+/// Returns the SVG for the board for us to embed.
 const fn get_board() -> &'static str {
     include_str!("../res/board.svg")
 }
 
+/// Gets the templaed SVG path for pieces.
 const fn get_piece(p: Piece, c: Color) -> &'static str {
     match (p, c) {
         (Piece::Pawn, Color::White) => include_str!("../res/P.svg"),
@@ -48,6 +75,7 @@ const fn get_piece(p: Piece, c: Color) -> &'static str {
     }
 }
 
+/// For a given rank and file return (x, y) coordinate.
 fn coordinate(file: File, rank: Rank) -> (f32, f32) {
     let rank = 70 - (rank.to_index() * 10);
     (
@@ -56,6 +84,7 @@ fn coordinate(file: File, rank: Rank) -> (f32, f32) {
     )
 }
 
+/// Given a board layout generates an SVG string for the board
 pub fn generate_board(board: &Board) -> String {
     let mut pieces = String::new();
     for i in 0..64 {
@@ -74,18 +103,7 @@ pub fn generate_board(board: &Board) -> String {
     get_board().replace("<!-- PIECES -->", &pieces)
 }
 
-pub fn save_board_from_fen(fen: &str, path: impl AsRef<Path>) -> io::Result<()> {
-    let board = Board::from_str(fen)
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
-    save_board(&board, path)
-}
-
-/// Takes
-pub fn save_board(board: &Board, path: impl AsRef<Path>) -> io::Result<()> {
-    let svg = generate_board(&board);
-    fs::write(path, svg)
-}
-
+/// Run mdbook-chess on an mdbook replacing all chess blocks with SVGs
 pub fn run_preprocessor(ctx: &PreprocessorContext, mut book: Book) -> Result<Book, MdBookError> {
     // No settings so we'll skip
     book.for_each_mut(|item| {
@@ -99,6 +117,7 @@ pub fn run_preprocessor(ctx: &PreprocessorContext, mut book: Book) -> Result<Boo
     Ok(book)
 }
 
+/// Generate new markdown for a chapter
 fn process_code_blocks(chapter: &mut Chapter) -> Result<String, fmt::Error> {
     use CodeBlockKind::*;
     use CowStr::*;
@@ -106,7 +125,6 @@ fn process_code_blocks(chapter: &mut Chapter) -> Result<String, fmt::Error> {
     use Tag::{CodeBlock, Paragraph};
 
     let mut boards = HashMap::new();
-    let mut checkpoints = HashMap::new();
 
     let mut output = String::with_capacity(chapter.content.len());
     let mut inside_block = false;
@@ -117,7 +135,7 @@ fn process_code_blocks(chapter: &mut Chapter) -> Result<String, fmt::Error> {
         }
         (Text(Borrowed(text)), true) => {
             inside_block = false;
-            Html(generate_board_svg(text, &mut boards, &mut checkpoints).into())
+            Html(process_chess_block(text, &mut boards).into())
         }
         (End(CodeBlock(Fenced(Borrowed("chess")))), false) => End(Paragraph),
         _ => e,
@@ -126,15 +144,11 @@ fn process_code_blocks(chapter: &mut Chapter) -> Result<String, fmt::Error> {
     cmark(events, &mut output).map(|_| output)
 }
 
-fn generate_board_svg(
-    input: &str,
-    boards: &mut HashMap<String, Board>,
-    checkpoints: &mut HashMap<String, Board>,
-) -> String {
+/// Given our c
+fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> String {
     match serde_yaml::from_str::<BoardBlock>(input) {
         Ok(block) => {
-            eprintln!("I'm doing this for ya: {:?}", block);
-            let name = block.name.clone();
+            let name = block.load.clone();
             let mut board = match block.board.as_deref() {
                 Some("start") => Board::default(),
                 Some(s) => match Board::from_str(s) {
@@ -145,10 +159,7 @@ fn generate_board_svg(
                     }
                 },
                 None => {
-                    let res = name
-                        .as_ref()
-                        .and_then(|name| boards.get(name).or_else(|| checkpoints.get(name)))
-                        .cloned();
+                    let res = name.as_ref().and_then(|name| boards.get(name)).cloned();
                     match res {
                         Some(b) => b,
                         None => Board::default(),
@@ -168,18 +179,22 @@ fn generate_board_svg(
                     }
                 }
             }
-            if let Some(s) = block.checkpoint.as_ref() {
-                checkpoints.insert(s.clone(), board.clone());
+            if let Some(s) = block.save.as_ref() {
+                for save in s.iter() {
+                    boards.insert(save.clone(), board.clone());
+                }
             }
-            if let Some(name) = name.clone() {
-                boards.insert(name, board.clone());
+            if block.overwrite && !matches!(name.as_deref(), Some("start")) {
+                if let Some(name) = name.clone() {
+                    boards.insert(name, board.clone());
+                }
             }
             generate_board(&board)
         }
         Err(e) => {
             eprintln!("Invalid YAML: {}", e);
-            // We got nothing, lets just pop an empty board there:
-            get_board().to_string()
+            // We got nothing, lets just pop a default board
+            generate_board(&Board::default())
         }
     }
 }

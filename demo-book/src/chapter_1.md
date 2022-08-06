@@ -1,32 +1,56 @@
 # Chapter 1
 
-Lets make a default board!
+```chess
+
+```
+
+Lets look at the Caro-Kann defense. First lets create a new board
 
 ```chess
-name: game
+save: caro-kann
 board: start
 ```
 
-And play the move e4, but save a checkpoint.
+And White plays e4 and black starts the defense with c6
 
 ```chess
-name: game
-checkpoint: other
-moves: ["e4"]
+load: caro-kann
+moves: ["e4", "c6"]
+save: ["caro-kann-alt", "caro-kann-alt2"]
 ```
 
-Player plays and we match
+Now we have the c6 pawn protecting d5 we can move our black pawn here next:
 
 ```chess
-name: game
-moves: ["e5", "d4"]
+load: caro-kann
+moves: ["d4", "d5"]
 ```
 
-Or they could have done e5
+So now the main line is:
 
 ```chess
-name: other
-moves: ["d5"]
+load: caro-kann
+moves: ["e5", "Bf5"]
+overwrite: false
 ```
 
+But there is an alternative where we capture and continue to push the pawn
 
+```chess
+load: caro-kann
+moves: ["Nc3", "dxe4"]
+```
+
+Of course it doesn't work if this happens because an en-passant is threatened:
+
+```chess
+load: caro-kann-alt
+overwrite: false
+moves: ["e5", "d5"]
+```
+
+Last check of loading:
+
+```chess
+load: caro-kann-alt2
+```
