@@ -1,6 +1,9 @@
 # mdbook-chess
 
-WIP But stick chess games into mdbook
+Create chess boards in your mdbooks!
+
+![A chess board in starting position](./doc/demo_image.svg)
+<img src="./doc/demo_image.svg">
 
 # Usage
 
