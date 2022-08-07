@@ -251,6 +251,6 @@ mod tests {
             vec![],
         );
         let s = process_code_blocks(&mut chapter).unwrap();
-        assert!(s.contains(&generate_board(&Board::default())));
+        assert!(s.contains(&generate_board(&Board::default(), None)));
     }
 }
