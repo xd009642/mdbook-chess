@@ -37,6 +37,7 @@ Currently the chess boards are specified via a very simple YAML structure. With
 * save - name to save board under (can be a list)
 * moves - list of moves
 * overwrite - boolean of whether to overwrite saved version of the board with these moves
+* highlights - highlight a square on the board a list of squares
 
 So we can create a starting board like using a code block with the language set to chess. Like:
 
@@ -69,11 +70,13 @@ can also save multiple boards from a point for exploring many different routes:
 load: our_board
 save: ["ck-main", "ck-2", "ck-3"]
 moves: ["e4", "c6", "d4", "d5"]
-``` 
+```
 
 Generally, if there's a syntax error in the markdown there's a reasonable
 chance you'll see a bunch of SVG text dumped into the book. If this happens
 read the log messages and hopefully an answer will be gleaned.
+
+For an example of all the features in use please look to the demo book!
 
 # Roadmap
 
