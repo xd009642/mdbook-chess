@@ -80,18 +80,19 @@ For an example of all the features in use please look to the demo book!
 
 # Roadmap
 
-# Potential future features
+## Potential future features
 
 These are features I'd be willing to do if there was demand and they were
 sufficiently easy or willing to accept PRs for.
 
 * GIF generation
 * Move arrows
+* Chess.com style icons (blunder, excellent etc)
 * Styling and theming
 * More layout options in page
 * Rank and file labels
 
-# Unlikely features
+## Unlikely features
 
 These are features where they will only be added via PR but the PR may
 not be accepted
