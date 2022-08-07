@@ -12,13 +12,14 @@ And White plays e4 and black starts the defense with c6
 ```chess
 load: caro-kann
 moves: ["e4", "c6"]
-save: ["caro-kann-alt", "caro-kann-alt2"]
+save: ["caro-kann-alt"]
 ```
 
 Now we have the c6 pawn protecting d5 we can move our black pawn here next:
 
 ```chess
 load: caro-kann
+save: caro-kann-show-moves
 moves: ["d4", "d5"]
 ```
 
@@ -45,8 +46,9 @@ overwrite: false
 moves: ["e5", "d5"]
 ```
 
-Last check of loading:
+We could have also highlighted the squares:
 
 ```chess
-load: caro-kann-alt2
+load: caro-kann-show-moves
+highlights: ["f5", "c3"]
 ```

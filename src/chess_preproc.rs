@@ -7,8 +7,8 @@ use pulldown_cmark_to_cmark::cmark;
 use serde::Deserialize;
 use std::collections::HashMap;
 
+use std::fmt;
 use std::str::FromStr;
-use std::{fmt};
 use tracing::{error, info};
 
 /// A constant X axis offset to apply to all pieces (and pawns).
@@ -53,6 +53,24 @@ pub struct BoardBlock {
     /// Whether to replace saved board with this update to it.
     #[serde(default = "true_value")]
     overwrite: bool,
+    /// Squares to highlight
+    #[serde(default)]
+    highlights: Vec<String>,
+}
+
+impl BoardBlock {
+    fn get_highlights(&self) -> Vec<Square> {
+        self.highlights
+            .iter()
+            .filter_map(|x| {
+                Square::from_str(x)
+                    .map_err(|e| {
+                        error!("Invalid square {}: {}", x, e);
+                    })
+                    .ok()
+            })
+            .collect()
+    }
 }
 
 /// Returns the SVG for the board for us to embed.
@@ -78,6 +96,10 @@ const fn get_piece(p: Piece, c: Color) -> &'static str {
     }
 }
 
+const fn square_highlight() -> &'static str {
+    include_str!("../res/highlight.svg")
+}
+
 /// For a given rank and file return (x, y) coordinate.
 fn coordinate(file: File, rank: Rank) -> (f32, f32) {
     let rank = 70 - (rank.to_index() * 10);
@@ -88,7 +110,7 @@ fn coordinate(file: File, rank: Rank) -> (f32, f32) {
 }
 
 /// Given a board layout generates an SVG string for the board
-pub fn generate_board(board: &Board) -> String {
+pub fn generate_board(board: &Board, highlights: Option<Vec<Square>>) -> String {
     let mut pieces = String::new();
     for i in 0..64 {
         let square = unsafe { Square::new(i) };
@@ -103,6 +125,16 @@ pub fn generate_board(board: &Board) -> String {
         }
     }
 
+    if let Some(highlights) = highlights {
+        for square in highlights.iter() {
+            let (x, y) = coordinate(square.get_file(), square.get_rank());
+            let square = square_highlight()
+                .replace("$X_POSITION", &(x - 0.57).to_string())
+                .replace("$Y_POSITION", &(y - 0.31).to_string());
+            pieces.push_str(&square);
+        }
+    }
+
     get_board().replace("<!-- PIECES -->", &pieces)
 }
 
@@ -113,7 +145,6 @@ pub fn run_preprocessor(_ctx: &PreprocessorContext, mut book: Book) -> Result<Bo
         if let BookItem::Chapter(chapter) = item {
             let _ = process_code_blocks(chapter).map(|s| {
                 chapter.content = s;
-                info!("chapter '{}' processed", chapter.name);
             });
         }
     });
@@ -129,11 +160,16 @@ fn process_code_blocks(chapter: &mut Chapter) -> Result<String, fmt::Error> {
 
     let mut boards = HashMap::new();
 
+    let mut logged_found = false;
     let mut output = String::with_capacity(chapter.content.len());
     let mut inside_block = false;
     let events = Parser::new(&chapter.content).map(|e| match (&e, inside_block) {
         (Start(CodeBlock(Fenced(Borrowed("chess")))), false) => {
             inside_block = true;
+            if !logged_found {
+                info!("Found chess block(s) in {}", chapter.name);
+                logged_found = true;
+            }
             Start(Paragraph)
         }
         (Text(Borrowed(text)), true) => {
@@ -192,12 +228,12 @@ fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Stri
                     boards.insert(name, board.clone());
                 }
             }
-            generate_board(&board)
+            generate_board(&board, Some(block.get_highlights()))
         }
         Err(e) => {
             error!("Creating default board invalid YAML: {}", e);
             // We got nothing, lets just pop a default board
-            generate_board(&Board::default())
+            generate_board(&Board::default(), None)
         }
     }
 }
@@ -215,6 +251,6 @@ mod tests {
             vec![],
         );
         let s = process_code_blocks(&mut chapter).unwrap();
-        assert!(s.contains(&generate_board(&Board::default())));
+        assert!(s.contains(&generate_board(&Board::default(), None)));
     }
 }

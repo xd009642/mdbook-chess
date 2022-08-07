@@ -2,7 +2,7 @@ use chess_preproc::*;
 use clap::{App, Arg, ArgMatches};
 
 use mdbook::errors::Error;
-use mdbook::preprocess::{CmdPreprocessor};
+use mdbook::preprocess::CmdPreprocessor;
 use semver::{Version, VersionReq};
 use std::{env, io, process};
 use tracing::{info, warn};
