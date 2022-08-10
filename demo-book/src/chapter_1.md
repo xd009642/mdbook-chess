@@ -52,3 +52,18 @@ We could have also highlighted the squares:
 load: caro-kann-show-moves
 highlights: ["f5", "c3"]
 ```
+
+Or arrows!
+
+```chess
+load: caro-kann-show-moves
+arrows: ["c8->f5", "b1->c3"]
+```
+
+Or both!!!
+
+```chess
+load: caro-kann-show-moves
+highlights: ["f5", "c3"]
+arrows: ["c8->f5", "b1->c3"]
+```

@@ -9,6 +9,7 @@ use tracing::{info, warn};
 use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::{Layer, Registry};
 
+pub mod arrows;
 mod chess_preproc;
 
 pub fn make_app() -> App<'static> {

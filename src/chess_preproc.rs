@@ -1,3 +1,4 @@
+use crate::arrows::*;
 use chess::{Board, ChessMove, Color, File, Piece, Rank, Square};
 use mdbook::book::{Book, BookItem, Chapter};
 use mdbook::errors::Error as MdBookError;
@@ -56,6 +57,9 @@ pub struct BoardBlock {
     /// Squares to highlight
     #[serde(default)]
     highlights: Vec<String>,
+    /// Arrows. Should be a list of string commands in the form ["a1->a2", "e2<->e4", "a3-g3"]
+    #[serde(default)]
+    arrows: Vec<Line>,
 }
 
 impl BoardBlock {
@@ -100,8 +104,13 @@ const fn square_highlight() -> &'static str {
     include_str!("../res/highlight.svg")
 }
 
+pub fn coordinate_from_square(square: &Square) -> (f32, f32) {
+    coordinate(square.get_file(), square.get_rank())
+}
+
+#[inline(always)]
 /// For a given rank and file return (x, y) coordinate.
-fn coordinate(file: File, rank: Rank) -> (f32, f32) {
+pub fn coordinate(file: File, rank: Rank) -> (f32, f32) {
     let rank = 70 - (rank.to_index() * 10);
     (
         (file.to_index() * 10) as f32 + X_OFFSET,
@@ -110,12 +119,12 @@ fn coordinate(file: File, rank: Rank) -> (f32, f32) {
 }
 
 /// Given a board layout generates an SVG string for the board
-pub fn generate_board(board: &Board, highlights: Option<Vec<Square>>) -> String {
+pub fn generate_board(board: &Board, highlights: Option<Vec<Square>>, lines: &[Line]) -> String {
     let mut pieces = String::new();
     for i in 0..64 {
         let square = unsafe { Square::new(i) };
         if let Some((piece, color)) = board.piece_on(square).zip(board.color_on(square)) {
-            let (x, y) = coordinate(square.get_file(), square.get_rank());
+            let (x, y) = coordinate_from_square(&square);
 
             let piece_svg = get_piece(piece, color)
                 .replace("$X_POSITION", &x.to_string())
@@ -127,12 +136,16 @@ pub fn generate_board(board: &Board, highlights: Option<Vec<Square>>) -> String 
 
     if let Some(highlights) = highlights {
         for square in highlights.iter() {
-            let (x, y) = coordinate(square.get_file(), square.get_rank());
+            let (x, y) = coordinate_from_square(square);
             let square = square_highlight()
                 .replace("$X_POSITION", &(x - 0.57).to_string())
                 .replace("$Y_POSITION", &(y - 0.31).to_string());
             pieces.push_str(&square);
         }
+    }
+
+    for line in lines {
+        pieces.push_str(&line.svg_string());
     }
 
     get_board().replace("<!-- PIECES -->", &pieces)
@@ -228,12 +241,12 @@ fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Stri
                     boards.insert(name, board.clone());
                 }
             }
-            generate_board(&board, Some(block.get_highlights()))
+            generate_board(&board, Some(block.get_highlights()), &block.arrows)
         }
         Err(e) => {
             error!("Creating default board invalid YAML: {}", e);
             // We got nothing, lets just pop a default board
-            generate_board(&Board::default(), None)
+            generate_board(&Board::default(), None, &[])
         }
     }
 }
@@ -251,6 +264,6 @@ mod tests {
             vec![],
         );
         let s = process_code_blocks(&mut chapter).unwrap();
-        assert!(s.contains(&generate_board(&Board::default(), None)));
+        assert!(s.contains(&generate_board(&Board::default(), None, &[])));
     }
 }
