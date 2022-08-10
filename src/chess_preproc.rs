@@ -104,10 +104,6 @@ const fn square_highlight() -> &'static str {
     include_str!("../res/highlight.svg")
 }
 
-const fn arrow_head() -> &'static str {
-    include_str!("../res/arrowhead.svg")
-}
-
 pub fn coordinate_from_square(square: &Square) -> (f32, f32) {
     coordinate(square.get_file(), square.get_rank())
 }
@@ -123,7 +119,7 @@ pub fn coordinate(file: File, rank: Rank) -> (f32, f32) {
 }
 
 /// Given a board layout generates an SVG string for the board
-pub fn generate_board(board: &Board, highlights: Option<Vec<Square>>) -> String {
+pub fn generate_board(board: &Board, highlights: Option<Vec<Square>>, lines: &[Line]) -> String {
     let mut pieces = String::new();
     for i in 0..64 {
         let square = unsafe { Square::new(i) };
@@ -146,6 +142,10 @@ pub fn generate_board(board: &Board, highlights: Option<Vec<Square>>) -> String 
                 .replace("$Y_POSITION", &(y - 0.31).to_string());
             pieces.push_str(&square);
         }
+    }
+
+    for line in lines {
+        pieces.push_str(&line.svg_string());
     }
 
     get_board().replace("<!-- PIECES -->", &pieces)
@@ -241,12 +241,12 @@ fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Stri
                     boards.insert(name, board.clone());
                 }
             }
-            generate_board(&board, Some(block.get_highlights()))
+            generate_board(&board, Some(block.get_highlights()), &[])
         }
         Err(e) => {
             error!("Creating default board invalid YAML: {}", e);
             // We got nothing, lets just pop a default board
-            generate_board(&Board::default(), None)
+            generate_board(&Board::default(), None, &[])
         }
     }
 }
@@ -264,6 +264,6 @@ mod tests {
             vec![],
         );
         let s = process_code_blocks(&mut chapter).unwrap();
-        assert!(s.contains(&generate_board(&Board::default(), None)));
+        assert!(s.contains(&generate_board(&Board::default(), None, &[])));
     }
 }
