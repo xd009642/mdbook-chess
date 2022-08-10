@@ -38,6 +38,7 @@ Currently the chess boards are specified via a very simple YAML structure. With
 * moves - list of moves
 * overwrite - boolean of whether to overwrite saved version of the board with these moves
 * highlights - highlight a square on the board a list of squares
+* arrows - lines and arrows from square to square (currently only straight)
 
 So we can create a starting board like using a code block with the language set to chess. Like:
 
@@ -86,11 +87,12 @@ These are features I'd be willing to do if there was demand and they were
 sufficiently easy or willing to accept PRs for.
 
 * GIF generation
-* Move arrows
+* L shaped move arrow for horsey
 * Chess.com style icons (blunder, excellent etc)
 * Styling and theming
 * More layout options in page
 * Rank and file labels
+* Flip the board
 
 ## Unlikely features
 

@@ -1,10 +1,8 @@
 use crate::*;
 use chess::Square;
 use serde::de::{self, Deserialize, Deserializer, Unexpected, Visitor};
-use std::f32::consts::PI;
 use std::fmt;
 use std::str::FromStr;
-use tracing::info;
 
 pub const ARROW_COLOUR: &'static str = "#008a00";
 pub const ARROW_OPACITY: f32 = 0.50196078;
@@ -146,7 +144,7 @@ impl Line {
             );
 
             match self.head.as_ref() {
-                Some(ArrowHead::Single) => s.push_str(r#" marker-start="url(#startarrow)"/>"#),
+                Some(ArrowHead::Single) => s.push_str(r#" marker-end="url(#endarrow)"/>"#),
                 Some(ArrowHead::Double) => {
                     s.push_str(r#" marker-start="url(#startarrow)" marker-end="url(#endarrow)"/>"#)
                 }
