@@ -59,7 +59,7 @@ pub struct BoardBlock {
     highlights: Vec<String>,
     /// Arrows. Should be a list of string commands in the form ["a1->a2", "e2<->e4", "a3-g3"]
     #[serde(default)]
-    arrows: Vec<Line>,
+    lines: Vec<Line>,
 }
 
 impl BoardBlock {
@@ -241,7 +241,7 @@ fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Stri
                     boards.insert(name, board.clone());
                 }
             }
-            generate_board(&board, Some(block.get_highlights()), &block.arrows)
+            generate_board(&board, Some(block.get_highlights()), &block.lines)
         }
         Err(e) => {
             error!("Creating default board invalid YAML: {}", e);

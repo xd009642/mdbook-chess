@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Added
 - Square highlighting
-- Implemented move arrows
+- Implemented move arrows and expose via lines field in yaml
 
 ### Changed
 - Only log chapters containing chess blocks

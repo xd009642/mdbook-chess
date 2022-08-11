@@ -38,7 +38,7 @@ Currently the chess boards are specified via a very simple YAML structure. With
 * moves - list of moves
 * overwrite - boolean of whether to overwrite saved version of the board with these moves
 * highlights - highlight a square on the board a list of squares
-* arrows - lines and arrows from square to square (currently only straight)
+* lines - lines and arrows from square to square (currently only straight)
 
 So we can create a starting board like using a code block with the language set to chess. Like:
 
@@ -72,6 +72,22 @@ load: our_board
 save: ["ck-main", "ck-2", "ck-3"]
 moves: ["e4", "c6", "d4", "d5"]
 ```
+
+Arrows are done by writing the two squares and the line between them, there are
+currently 3 styles:
+
+* `-` a line
+* `->` a single direction arrow
+* `<->` a bidirectional arrow
+
+And we can use them as so:
+
+```chess
+load: our_board
+moves: ["e4", "c6", "d4", "d5"]
+lines: ["e2->e4", "d1<->h5", "a4-h4"]
+```
+
 
 Generally, if there's a syntax error in the markdown there's a reasonable
 chance you'll see a bunch of SVG text dumped into the book. If this happens

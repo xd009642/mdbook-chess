@@ -57,7 +57,7 @@ Or arrows!
 
 ```chess
 load: caro-kann-show-moves
-arrows: ["c8->f5", "b1->c3"]
+lines: ["c8->f5", "b1->c3"]
 ```
 
 Or both!!!
@@ -65,5 +65,5 @@ Or both!!!
 ```chess
 load: caro-kann-show-moves
 highlights: ["f5", "c3"]
-arrows: ["c8->f5", "b1->c3"]
+lines: ["c8->f5", "b1->c3"]
 ```
