@@ -1,8 +1,7 @@
 use chess_preproc::*;
 use clap::{App, Arg, ArgMatches};
-
 use mdbook::errors::Error;
-use mdbook::preprocess::CmdPreprocessor;
+use mdbook::preprocess::{CmdPreprocessor, Preprocessor};
 use semver::{Version, VersionReq};
 use std::{env, io, process};
 use tracing::{info, warn};
@@ -67,15 +66,17 @@ fn handle_preprocessing() -> Result<(), Error> {
     }
     info!("Processing!");
 
-    let processed_book = run_preprocessor(&ctx, book).expect("FUCK1");
+    let preproc = ChessPreprocessor;
+    let processed_book = preproc.run(&ctx, book).expect("FUCK1");
     let s = serde_json::to_string(&processed_book).expect("FUCK");
     println!("{}", s);
     Ok(())
 }
 
 fn handle_supports(sub_args: &ArgMatches) -> ! {
+    let preproc = ChessPreprocessor;
     let renderer = sub_args.value_of("renderer").expect("Required argument");
-    if renderer != "not-supported" {
+    if preproc.supports_renderer(renderer) {
         process::exit(0);
     } else {
         process::exit(1);

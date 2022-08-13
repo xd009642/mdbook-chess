@@ -2,7 +2,7 @@ use crate::arrows::*;
 use chess::{Board, ChessMove, Color, File, Piece, Rank, Square};
 use mdbook::book::{Book, BookItem, Chapter};
 use mdbook::errors::Error as MdBookError;
-use mdbook::preprocess::PreprocessorContext;
+use mdbook::preprocess::{Preprocessor, PreprocessorContext};
 use pulldown_cmark::{CodeBlockKind, CowStr, Event, Parser, Tag};
 use pulldown_cmark_to_cmark::cmark;
 use serde::Deserialize;
@@ -21,23 +21,6 @@ pub const PREPROCESSOR_NAME: &'static str = "mdbook-chess";
 
 const fn true_value() -> bool {
     true
-}
-
-/// To allow for `field = "hello"` or `field = ["hello", "world"]` in YAML
-#[derive(Debug, Clone, Deserialize)]
-#[serde(untagged)]
-pub enum ManyOrOne {
-    One(String),
-    Many(Vec<String>),
-}
-
-impl ManyOrOne {
-    fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &'a String> + 'a> {
-        match self {
-            Self::One(s) => Box::new(std::iter::once(s)),
-            Self::Many(s) => Box::new(s.iter()),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -60,6 +43,43 @@ pub struct BoardBlock {
     /// Arrows. Should be a list of string commands in the form ["a1->a2", "e2<->e4", "a3-g3"]
     #[serde(default)]
     lines: Vec<Line>,
+}
+
+pub struct ChessPreprocessor;
+
+impl Preprocessor for ChessPreprocessor {
+    fn name(&self) -> &str {
+        PREPROCESSOR_NAME
+    }
+
+    fn run(&self, _ctx: &PreprocessorContext, mut book: Book) -> Result<Book, MdBookError> {
+        // No settings so we'll skip
+        book.for_each_mut(|item| {
+            if let BookItem::Chapter(chapter) = item {
+                let _ = process_code_blocks(chapter).map(|s| {
+                    chapter.content = s;
+                });
+            }
+        });
+        Ok(book)
+    }
+}
+
+/// To allow for `field = "hello"` or `field = ["hello", "world"]` in YAML
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum ManyOrOne {
+    One(String),
+    Many(Vec<String>),
+}
+
+impl ManyOrOne {
+    fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &'a String> + 'a> {
+        match self {
+            Self::One(s) => Box::new(std::iter::once(s)),
+            Self::Many(s) => Box::new(s.iter()),
+        }
+    }
 }
 
 impl BoardBlock {
@@ -149,19 +169,6 @@ pub fn generate_board(board: &Board, highlights: Option<Vec<Square>>, lines: &[L
     }
 
     get_board().replace("<!-- PIECES -->", &pieces)
-}
-
-/// Run mdbook-chess on an mdbook replacing all chess blocks with SVGs
-pub fn run_preprocessor(_ctx: &PreprocessorContext, mut book: Book) -> Result<Book, MdBookError> {
-    // No settings so we'll skip
-    book.for_each_mut(|item| {
-        if let BookItem::Chapter(chapter) = item {
-            let _ = process_code_blocks(chapter).map(|s| {
-                chapter.content = s;
-            });
-        }
-    });
-    Ok(book)
 }
 
 /// Generate new markdown for a chapter
