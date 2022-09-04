@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Only log chapters containing chess blocks
+- Fixed squares on board so A1 is dark not light
  
 ## [0.1.0] - 2022-08-06
 ### Added
