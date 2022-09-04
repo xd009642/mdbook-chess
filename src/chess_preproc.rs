@@ -158,8 +158,8 @@ pub fn generate_board(board: &Board, highlights: Option<Vec<Square>>, lines: &[L
         for square in highlights.iter() {
             let (x, y) = coordinate_from_square(square);
             let square = square_highlight()
-                .replace("$X_POSITION", &(x - 0.57).to_string())
-                .replace("$Y_POSITION", &(y - 0.31).to_string());
+                .replace("$X_POSITION", &(x - 0.6).to_string())
+                .replace("$Y_POSITION", &(y - 0.27).to_string());
             pieces.push_str(&square);
         }
     }
