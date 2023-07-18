@@ -4,7 +4,7 @@ use mdbook::errors::Error;
 use mdbook::preprocess::{CmdPreprocessor, Preprocessor};
 use semver::{Version, VersionReq};
 use std::{env, io, process};
-use tracing::{info, warn};
+use tracing::{info, trace, warn};
 use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::{Layer, Registry};
 
@@ -67,8 +67,9 @@ fn handle_preprocessing() -> Result<(), Error> {
     info!("Processing!");
 
     let preproc = ChessPreprocessor;
-    let processed_book = preproc.run(&ctx, book).expect("FUCK1");
-    let s = serde_json::to_string(&processed_book).expect("FUCK");
+    let processed_book = preproc.run(&ctx, book).expect("Failed to preprocess book");
+    let s =
+        serde_json::to_string(&processed_book).expect("Failed to convert processed book to json");
     println!("{}", s);
     Ok(())
 }

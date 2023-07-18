@@ -4,7 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.2.1] - 2023-07-18
+### Fixed
+- Fixed handling of non-text non-chess markdown elements (tables)
+
+## [0.2.0] - 2022-09-04
 ### Added
 - Square highlighting
 - Implemented move arrows and expose via lines field in yaml

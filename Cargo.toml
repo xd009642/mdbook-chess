@@ -1,5 +1,6 @@
 [package]
 name = "mdbook-chess"
+version = "0.2.1"
 description = "An mdbook preprocessing plugin to generate chess boards"
 readme = "README.md"
 license = "MIT/Apache-2.0"
@@ -7,7 +8,6 @@ keywords = ["chess", "mdbook", "markdown"]
 documentation = "https://docs.rs/mdbook-chess"
 repository = "https://github.com/xd009642/mdbook-chess"
 homepage = "https://github.com/xd009642/mdbook-chess"
-version = "0.2.0"
 edition = "2021"
 
 [dependencies]

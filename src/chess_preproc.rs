@@ -197,6 +197,7 @@ fn process_code_blocks(chapter: &mut Chapter) -> Result<String, fmt::Error> {
             Html(process_chess_block(text, &mut boards).into())
         }
         (End(CodeBlock(Fenced(Borrowed("chess")))), false) => End(Paragraph),
+        (Text(text), false) => Html(text.clone()),
         _ => e,
     });
 
@@ -263,7 +264,7 @@ mod tests {
     use super::*;
 
     #[test]
-    pub fn ensure_svg_in_output() {
+    fn ensure_svg_in_output() {
         let mut chapter = Chapter::new(
             "test",
             "```chess\nBoard: default\n```".to_string(),
@@ -272,5 +273,17 @@ mod tests {
         );
         let s = process_code_blocks(&mut chapter).unwrap();
         assert!(s.contains(&generate_board(&Board::default(), None, &[])));
+    }
+
+    #[test]
+    fn dont_remove_tables() {
+        let mut chapter = Chapter::new(
+            "test",
+            "|foo|bar|\n|---|---|\n|a|b|".to_string(),
+            ".",
+            vec![],
+        );
+        let s = process_code_blocks(&mut chapter).unwrap();
+        assert!(!s.contains(r#"\|foo|bar|"#), "{}", s);
     }
 }
