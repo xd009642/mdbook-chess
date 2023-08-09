@@ -7,10 +7,9 @@ use pulldown_cmark::{CodeBlockKind, CowStr, Event, Parser, Tag};
 use pulldown_cmark_to_cmark::cmark;
 use serde::Deserialize;
 use std::collections::HashMap;
-
 use std::fmt;
 use std::str::FromStr;
-use tracing::{error, info};
+use tracing::{error, info, debug};
 
 /// A constant X axis offset to apply to all pieces (and pawns).
 const X_OFFSET: f32 = 0.6;
@@ -197,8 +196,11 @@ fn process_code_blocks(chapter: &mut Chapter) -> Result<String, fmt::Error> {
             Html(process_chess_block(text, &mut boards).into())
         }
         (End(CodeBlock(Fenced(Borrowed("chess")))), false) => End(Paragraph),
-        (Text(text), false) => Html(text.clone()),
-        _ => e,
+        (Text(text), _) => Html(text.clone()),
+        _ => {
+            debug!("Ignoring event: {:?}", e);
+            e
+        },
     });
 
     cmark(events, &mut output).map(|_| output)
