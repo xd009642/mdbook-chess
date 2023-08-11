@@ -1029,7 +1029,7 @@ dependencies = [
 
 [[package]]
 name = "mdbook-chess"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "chess",
  "clap 3.2.25",
