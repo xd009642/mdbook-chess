@@ -7,10 +7,9 @@ use pulldown_cmark::{CodeBlockKind, CowStr, Event, Parser, Tag};
 use pulldown_cmark_to_cmark::cmark;
 use serde::Deserialize;
 use std::collections::HashMap;
-
 use std::fmt;
 use std::str::FromStr;
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
 /// A constant X axis offset to apply to all pieces (and pawns).
 const X_OFFSET: f32 = 0.6;
@@ -178,30 +177,38 @@ fn process_code_blocks(chapter: &mut Chapter) -> Result<String, fmt::Error> {
     use Event::*;
     use Tag::{CodeBlock, Paragraph};
 
-    let mut boards = HashMap::new();
+    if chapter.content.contains("```chess") {
+        // TODO Something in this doesn't work with tables!
+        let mut boards = HashMap::new();
 
-    let mut logged_found = false;
-    let mut output = String::with_capacity(chapter.content.len());
-    let mut inside_block = false;
-    let events = Parser::new(&chapter.content).map(|e| match (&e, inside_block) {
-        (Start(CodeBlock(Fenced(Borrowed("chess")))), false) => {
-            inside_block = true;
-            if !logged_found {
-                info!("Found chess block(s) in {}", chapter.name);
-                logged_found = true;
+        let mut logged_found = false;
+        let mut output = String::with_capacity(chapter.content.len());
+        let mut inside_block = false;
+        let events = Parser::new(&chapter.content).map(|e| match (&e, inside_block) {
+            (Start(CodeBlock(Fenced(Borrowed("chess")))), false) => {
+                inside_block = true;
+                if !logged_found {
+                    info!("Found chess block(s) in {}", chapter.name);
+                    logged_found = true;
+                }
+                Start(Paragraph)
             }
-            Start(Paragraph)
-        }
-        (Text(Borrowed(text)), true) => {
-            inside_block = false;
-            Html(process_chess_block(text, &mut boards).into())
-        }
-        (End(CodeBlock(Fenced(Borrowed("chess")))), false) => End(Paragraph),
-        (Text(text), false) => Html(text.clone()),
-        _ => e,
-    });
+            (Text(Borrowed(text)), true) => {
+                inside_block = false;
+                Html(process_chess_block(text, &mut boards).into())
+            }
+            (End(CodeBlock(Fenced(Borrowed("chess")))), false) => End(Paragraph),
+            (Text(text), _) => Html(text.clone()),
+            _ => {
+                debug!("Ignoring event: {:?}", e);
+                e
+            }
+        });
 
-    cmark(events, &mut output).map(|_| output)
+        cmark(events, &mut output).map(|_| output)
+    } else {
+        Ok(chapter.content.clone())
+    }
 }
 
 /// Given our c
@@ -262,6 +269,7 @@ fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Stri
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
 
     #[test]
     fn ensure_svg_in_output() {
@@ -284,6 +292,14 @@ mod tests {
             vec![],
         );
         let s = process_code_blocks(&mut chapter).unwrap();
-        assert!(!s.contains(r#"\|foo|bar|"#), "{}", s);
+        assert!(!s.contains(r#"|foo|bar|\n|---|---|\n|a|b|"#), "{}", s);
+    }
+
+    #[test]
+    fn dont_break_emphasis_in_tables() {
+        let content = fs::read_to_string("demo-book/src/no_chess.md").unwrap();
+        let mut chapter = Chapter::new("test", content.clone(), ".", vec![]);
+        let s = process_code_blocks(&mut chapter).unwrap();
+        assert_eq!(content, s);
     }
 }

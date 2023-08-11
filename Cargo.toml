@@ -1,6 +1,6 @@
 [package]
 name = "mdbook-chess"
-version = "0.2.1"
+version = "0.2.2"
 description = "An mdbook preprocessing plugin to generate chess boards"
 readme = "README.md"
 license = "MIT/Apache-2.0"
