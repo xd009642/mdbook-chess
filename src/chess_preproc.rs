@@ -3,11 +3,10 @@ use chess::{Board, ChessMove, Color, File, Piece, Rank, Square};
 use mdbook::book::{Book, BookItem, Chapter};
 use mdbook::errors::Error as MdBookError;
 use mdbook::preprocess::{Preprocessor, PreprocessorContext};
-use pulldown_cmark::{CodeBlockKind, CowStr, Event, Parser, Tag};
+use pulldown_cmark::{CodeBlockKind, CowStr, Event, Parser, Tag, TagEnd};
 use pulldown_cmark_to_cmark::cmark;
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::fmt;
 use std::str::FromStr;
 use tracing::{debug, error, info};
 
@@ -171,7 +170,7 @@ pub fn generate_board(board: &Board, highlights: Option<Vec<Square>>, lines: &[L
 }
 
 /// Generate new markdown for a chapter
-fn process_code_blocks(chapter: &mut Chapter) -> Result<String, fmt::Error> {
+fn process_code_blocks(chapter: &mut Chapter) -> Result<String, pulldown_cmark_to_cmark::Error> {
     use CodeBlockKind::*;
     use CowStr::*;
     use Event::*;
@@ -197,7 +196,7 @@ fn process_code_blocks(chapter: &mut Chapter) -> Result<String, fmt::Error> {
                 inside_block = false;
                 Html(process_chess_block(text, &mut boards).into())
             }
-            (End(CodeBlock(Fenced(Borrowed("chess")))), false) => End(Paragraph),
+            (End(TagEnd::CodeBlock), false) => End(TagEnd::Paragraph),
             (Text(text), _) => Html(text.clone()),
             _ => {
                 debug!("Ignoring event: {:?}", e);

@@ -1,21 +1,21 @@
 use chess_preproc::*;
-use clap::{App, Arg, ArgMatches};
+use clap::{Command, Arg, ArgMatches};
 use mdbook::errors::Error;
 use mdbook::preprocess::{CmdPreprocessor, Preprocessor};
 use semver::{Version, VersionReq};
 use std::{env, io, process};
-use tracing::{info, trace, warn};
+use tracing::{info, warn};
 use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::{Layer, Registry};
 
 pub mod arrows;
 mod chess_preproc;
 
-pub fn make_app() -> App<'static> {
-    App::new(PREPROCESSOR_NAME)
+pub fn make_app() -> Command {
+    Command::new(PREPROCESSOR_NAME)
         .about("A chess preprocessor which puts images of boards into your book")
         .subcommand(
-            App::new("supports")
+            Command::new("supports")
                 .arg(Arg::new("renderer").required(true))
                 .about("Check whether a renderer is supported by this preprocessor"),
         )
@@ -76,8 +76,8 @@ fn handle_preprocessing() -> Result<(), Error> {
 
 fn handle_supports(sub_args: &ArgMatches) -> ! {
     let preproc = ChessPreprocessor;
-    let renderer = sub_args.value_of("renderer").expect("Required argument");
-    if preproc.supports_renderer(renderer) {
+    let renderer: &String = sub_args.get_one("renderer").expect("Required argument");
+    if preproc.supports_renderer(renderer.as_str()) {
         process::exit(0);
     } else {
         process::exit(1);
