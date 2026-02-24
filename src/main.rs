@@ -1,5 +1,5 @@
 use chess_preproc::*;
-use clap::{Command, Arg, ArgMatches};
+use clap::{Arg, ArgMatches, Command};
 use mdbook::errors::Error;
 use mdbook::preprocess::{CmdPreprocessor, Preprocessor};
 use semver::{Version, VersionReq};
