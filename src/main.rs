@@ -1,7 +1,7 @@
 use chess_preproc::*;
 use clap::{Arg, ArgMatches, Command};
-use mdbook::errors::Error;
-use mdbook::preprocess::{CmdPreprocessor, Preprocessor};
+use mdbook_preprocessor::errors::Error;
+use mdbook_preprocessor::Preprocessor;
 use semver::{Version, VersionReq};
 use std::{env, io, process};
 use tracing::{info, warn};
@@ -50,17 +50,17 @@ fn main() {
 }
 
 fn handle_preprocessing() -> Result<(), Error> {
-    let (ctx, book) = CmdPreprocessor::parse_input(io::stdin())?;
+    let (ctx, book) = mdbook_preprocessor::parse_input(io::stdin())?;
 
     let book_version = Version::parse(&ctx.mdbook_version)?;
-    let version_req = VersionReq::parse(mdbook::MDBOOK_VERSION)?;
+    let version_req = VersionReq::parse(mdbook_preprocessor::MDBOOK_VERSION)?;
 
     if !version_req.matches(&book_version) {
         warn!(
             "Warning: The {} plugin was built against version {} of mdbook, \
              but we're being called from version {}",
             PREPROCESSOR_NAME,
-            mdbook::MDBOOK_VERSION,
+            mdbook_preprocessor::MDBOOK_VERSION,
             ctx.mdbook_version
         );
     }
@@ -77,7 +77,10 @@ fn handle_preprocessing() -> Result<(), Error> {
 fn handle_supports(sub_args: &ArgMatches) -> ! {
     let preproc = ChessPreprocessor;
     let renderer: &String = sub_args.get_one("renderer").expect("Required argument");
-    if preproc.supports_renderer(renderer.as_str()) {
+    if preproc
+        .supports_renderer(renderer.as_str())
+        .expect("Failed to determine renderer support")
+    {
         process::exit(0);
     } else {
         process::exit(1);

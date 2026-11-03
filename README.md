@@ -6,6 +6,8 @@ Create chess boards in your mdbooks!
 
 # Installation
 
+Requires mdBook 0.5.4 or later in the 0.5 series and Rust 1.88 or later to build.
+
 Simply:
 
 ```
@@ -19,7 +21,6 @@ And then add to your mdbook project as so:
 [book]
 authors = ["xd009642"]
 language = "en"
-multilingual = false
 src = "src"
 title = "mdbook-chess"
 

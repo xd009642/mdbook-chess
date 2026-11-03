@@ -1,8 +1,8 @@
 use crate::arrows::*;
 use chess::{Board, ChessMove, Color, File, Piece, Rank, Square};
-use mdbook::book::{Book, BookItem, Chapter};
-use mdbook::errors::Error as MdBookError;
-use mdbook::preprocess::{Preprocessor, PreprocessorContext};
+use mdbook_preprocessor::book::{Book, BookItem, Chapter};
+use mdbook_preprocessor::errors::Error as MdBookError;
+use mdbook_preprocessor::{Preprocessor, PreprocessorContext};
 use pulldown_cmark::{CodeBlockKind, CowStr, Event, Parser, Tag, TagEnd};
 use pulldown_cmark_to_cmark::cmark;
 use serde::Deserialize;
