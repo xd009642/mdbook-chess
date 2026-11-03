@@ -1,21 +1,16 @@
-use crate::arrows::*;
-use chess::{Board, ChessMove, Color, File, Piece, Rank, Square};
-use mdbook::book::{Book, BookItem, Chapter};
-use mdbook::errors::Error as MdBookError;
-use mdbook::preprocess::{Preprocessor, PreprocessorContext};
-use pulldown_cmark::{CodeBlockKind, CowStr, Event, Parser, Tag, TagEnd};
-use pulldown_cmark_to_cmark::cmark;
+use crate::arrows::Line;
+use crate::render;
+use anyhow::{anyhow, Context};
+use chess::{Board, ChessMove, Square};
+use mdbook_preprocessor::book::{Book, BookItem, Chapter};
+use mdbook_preprocessor::errors::Error;
+use mdbook_preprocessor::{Preprocessor, PreprocessorContext};
+use pulldown_cmark::{CodeBlockKind, Event, Parser, Tag, TagEnd};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::str::FromStr;
-use tracing::{debug, error, info};
 
-/// A constant X axis offset to apply to all pieces (and pawns).
-const X_OFFSET: f32 = 0.6;
-/// A constant Y axis offset to apply to all pieces (and pawns).
-const Y_OFFSET: f32 = 0.3;
-/// The name of the plugin.
-pub const PREPROCESSOR_NAME: &'static str = "mdbook-chess";
+pub const PREPROCESSOR_NAME: &str = "mdbook-chess";
 
 const fn true_value() -> bool {
     true
@@ -50,15 +45,16 @@ impl Preprocessor for ChessPreprocessor {
         PREPROCESSOR_NAME
     }
 
-    fn run(&self, _ctx: &PreprocessorContext, mut book: Book) -> Result<Book, MdBookError> {
-        // No settings so we'll skip
+    fn run(&self, _ctx: &PreprocessorContext, mut book: Book) -> Result<Book, Error> {
+        let mut result = Ok(());
         book.for_each_mut(|item| {
-            if let BookItem::Chapter(chapter) = item {
-                let _ = process_code_blocks(chapter).map(|s| {
-                    chapter.content = s;
-                });
+            if result.is_ok() {
+                if let BookItem::Chapter(chapter) = item {
+                    result = process_code_blocks(chapter).map(|content| chapter.content = content);
+                }
             }
         });
+        result?;
         Ok(book)
     }
 }
@@ -80,225 +76,145 @@ impl ManyOrOne {
     }
 }
 
-impl BoardBlock {
-    fn get_highlights(&self) -> Vec<Square> {
-        self.highlights
-            .iter()
-            .filter_map(|x| {
-                Square::from_str(x)
-                    .map_err(|e| {
-                        error!("Invalid square {}: {}", x, e);
-                    })
-                    .ok()
-            })
-            .collect()
-    }
-}
-
-/// Returns the SVG for the board for us to embed.
-const fn get_board() -> &'static str {
-    include_str!("../res/board.svg")
-}
-
-/// Gets the templaed SVG path for pieces.
-const fn get_piece(p: Piece, c: Color) -> &'static str {
-    match (p, c) {
-        (Piece::Pawn, Color::White) => include_str!("../res/P.svg"),
-        (Piece::Knight, Color::White) => include_str!("../res/N.svg"),
-        (Piece::Bishop, Color::White) => include_str!("../res/B.svg"),
-        (Piece::Rook, Color::White) => include_str!("../res/R.svg"),
-        (Piece::Queen, Color::White) => include_str!("../res/Q.svg"),
-        (Piece::King, Color::White) => include_str!("../res/K.svg"),
-        (Piece::Pawn, Color::Black) => include_str!("../res/p.svg"),
-        (Piece::Knight, Color::Black) => include_str!("../res/n.svg"),
-        (Piece::Bishop, Color::Black) => include_str!("../res/b.svg"),
-        (Piece::Rook, Color::Black) => include_str!("../res/r.svg"),
-        (Piece::Queen, Color::Black) => include_str!("../res/q.svg"),
-        (Piece::King, Color::Black) => include_str!("../res/k.svg"),
-    }
-}
-
-const fn square_highlight() -> &'static str {
-    include_str!("../res/highlight.svg")
-}
-
-pub fn coordinate_from_square(square: &Square) -> (f32, f32) {
-    coordinate(square.get_file(), square.get_rank())
-}
-
-#[inline(always)]
-/// For a given rank and file return (x, y) coordinate.
-pub fn coordinate(file: File, rank: Rank) -> (f32, f32) {
-    let rank = 70 - (rank.to_index() * 10);
-    (
-        (file.to_index() * 10) as f32 + X_OFFSET,
-        rank as f32 + Y_OFFSET,
-    )
-}
-
-/// Given a board layout generates an SVG string for the board
-pub fn generate_board(board: &Board, highlights: Option<Vec<Square>>, lines: &[Line]) -> String {
-    let mut pieces = String::new();
-    for i in 0..64 {
-        let square = unsafe { Square::new(i) };
-        if let Some((piece, color)) = board.piece_on(square).zip(board.color_on(square)) {
-            let (x, y) = coordinate_from_square(&square);
-
-            let piece_svg = get_piece(piece, color)
-                .replace("$X_POSITION", &x.to_string())
-                .replace("$Y_POSITION", &y.to_string());
-
-            pieces.push_str(&piece_svg);
+/// Replace only fenced chess blocks; all other source bytes belong to the author.
+fn process_code_blocks(chapter: &Chapter) -> Result<String, Error> {
+    let mut boards = HashMap::new();
+    let mut output = String::with_capacity(chapter.content.len());
+    let mut copied = 0;
+    let mut block_start = None;
+    let mut input = String::new();
+    let mut block_number = 0;
+    for (event, range) in Parser::new(&chapter.content).into_offset_iter() {
+        match event {
+            Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(info))) if info.trim() == "chess" => {
+                block_start = Some(range.start);
+                input.clear();
+            }
+            Event::Text(text) if block_start.is_some() => input.push_str(&text),
+            Event::End(TagEnd::CodeBlock) if block_start.is_some() => {
+                let start = block_start.take().expect("inside chess block");
+                block_number += 1;
+                let svg = process_chess_block(&input, &mut boards).with_context(|| {
+                    format!("chapter '{}', chess block {}", chapter.name, block_number)
+                })?;
+                output.push_str(&chapter.content[copied..start]);
+                output.push_str("<div class=\"chess-board\">");
+                output.push_str(&svg);
+                output.push_str("</div>\n");
+                copied = range.end;
+            }
+            _ => {}
         }
     }
-
-    if let Some(highlights) = highlights {
-        for square in highlights.iter() {
-            let (x, y) = coordinate_from_square(square);
-            let square = square_highlight()
-                .replace("$X_POSITION", &(x - 0.6).to_string())
-                .replace("$Y_POSITION", &(y - 0.27).to_string());
-            pieces.push_str(&square);
-        }
-    }
-
-    for line in lines {
-        pieces.push_str(&line.svg_string());
-    }
-
-    get_board().replace("<!-- PIECES -->", &pieces)
+    output.push_str(&chapter.content[copied..]);
+    Ok(output)
 }
 
-/// Generate new markdown for a chapter
-fn process_code_blocks(chapter: &mut Chapter) -> Result<String, pulldown_cmark_to_cmark::Error> {
-    use CodeBlockKind::*;
-    use CowStr::*;
-    use Event::*;
-    use Tag::{CodeBlock, Paragraph};
-
-    if chapter.content.contains("```chess") {
-        // TODO Something in this doesn't work with tables!
-        let mut boards = HashMap::new();
-
-        let mut logged_found = false;
-        let mut output = String::with_capacity(chapter.content.len());
-        let mut inside_block = false;
-        let events = Parser::new(&chapter.content).map(|e| match (&e, inside_block) {
-            (Start(CodeBlock(Fenced(Borrowed("chess")))), false) => {
-                inside_block = true;
-                if !logged_found {
-                    info!("Found chess block(s) in {}", chapter.name);
-                    logged_found = true;
-                }
-                Start(Paragraph)
-            }
-            (Text(Borrowed(text)), true) => {
-                inside_block = false;
-                Html(process_chess_block(text, &mut boards).into())
-            }
-            (End(TagEnd::CodeBlock), false) => End(TagEnd::Paragraph),
-            (Text(text), _) => Html(text.clone()),
-            _ => {
-                debug!("Ignoring event: {:?}", e);
-                e
-            }
-        });
-
-        cmark(events, &mut output).map(|_| output)
-    } else {
-        Ok(chapter.content.clone())
+fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Result<String, Error> {
+    let block: BoardBlock =
+        serde_yaml::from_str(if input.trim().is_empty() { "{}" } else { input })?;
+    let mut board = match block.board.as_deref() {
+        Some("start") => Board::default(),
+        Some(fen) => Board::from_str(fen).map_err(|e| anyhow!("invalid FEN in 'board': {e}"))?,
+        None => match block.load.as_deref() {
+            None | Some("start") => Board::default(),
+            Some(name) => *boards
+                .get(name)
+                .with_context(|| format!("unknown saved board '{name}'"))?,
+        },
+    };
+    for san in &block.moves {
+        let chess_move = ChessMove::from_san(&board, san)
+            .map_err(|e| anyhow!("invalid SAN move '{san}': {e}"))?;
+        board = board.make_move_new(chess_move);
     }
-}
-
-/// Given our c
-fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> String {
-    match serde_yaml::from_str::<BoardBlock>(input) {
-        Ok(block) => {
-            let name = block.load.clone();
-            let mut board = match block.board.as_deref() {
-                Some("start") => Board::default(),
-                Some(s) => match Board::from_str(s) {
-                    Ok(b) => b,
-                    Err(e) => {
-                        error!("Invalid FEN String: {}", e);
-                        return get_board().to_string();
-                    }
-                },
-                None => {
-                    let res = name.as_ref().and_then(|name| boards.get(name)).cloned();
-                    match res {
-                        Some(b) => b,
-                        None => Board::default(),
-                    }
-                }
-            };
-
-            for m in &block.moves {
-                match ChessMove::from_san(&board, m.as_str()) {
-                    Ok(chess_move) => {
-                        let new_board = board.make_move_new(chess_move);
-                        board = new_board;
-                    }
-                    Err(_) => {
-                        error!("{} is an invalid SAN move", m);
-                        return get_board().to_string();
-                    }
-                }
-            }
-            if let Some(s) = block.save.as_ref() {
-                for save in s.iter() {
-                    boards.insert(save.clone(), board.clone());
-                }
-            }
-            if block.overwrite && !matches!(name.as_deref(), Some("start")) {
-                if let Some(name) = name.clone() {
-                    boards.insert(name, board.clone());
-                }
-            }
-            generate_board(&board, Some(block.get_highlights()), &block.lines)
-        }
-        Err(e) => {
-            error!("Creating default board invalid YAML: {}", e);
-            // We got nothing, lets just pop a default board
-            generate_board(&Board::default(), None, &[])
+    let highlights = block
+        .highlights
+        .iter()
+        .map(|s| Square::from_str(s).map_err(|e| anyhow!("invalid highlight square '{s}': {e}")))
+        .collect::<Result<Vec<_>, _>>()?;
+    if let Some(names) = &block.save {
+        for name in names.iter() {
+            boards.insert(name.clone(), board);
         }
     }
+    if block.overwrite {
+        if let Some(name) = block.load.as_ref().filter(|name| name.as_str() != "start") {
+            boards.insert(name.clone(), board);
+        }
+    }
+    Ok(render::board(&board, &highlights, &block.lines))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
 
+    /// Tables, emphasis and other code fences must survive a nearby chess diagram byte-for-byte.
     #[test]
-    fn ensure_svg_in_output() {
-        let mut chapter = Chapter::new(
-            "test",
-            "```chess\nBoard: default\n```".to_string(),
-            ".",
-            vec![],
-        );
-        let s = process_code_blocks(&mut chapter).unwrap();
-        assert!(s.contains(&generate_board(&Board::default(), None, &[])));
+    fn preserves_surrounding_markdown() {
+        let before =
+            "| A | B |\n|---|---|\n| **bold** | _italic_ |\n\n```rust\nlet x = 1;\n```\n\n";
+        let after = "\n[link](https://example.com) &amp; <em>text</em>\n";
+        for fence in ["```", "~~~~"] {
+            let content = format!("{before}{fence}chess\n{fence}\n{after}");
+            let chapter = Chapter::new("test", content, ".", vec![]);
+            let output = process_code_blocks(&chapter).expect("valid chapter");
+            assert!(output.starts_with(before));
+            assert!(output.ends_with(after));
+            assert_eq!(output.matches("<svg").count(), 1);
+        }
     }
 
-    #[test]
-    fn dont_remove_tables() {
-        let mut chapter = Chapter::new(
-            "test",
-            "|foo|bar|\n|---|---|\n|a|b|".to_string(),
-            ".",
-            vec![],
-        );
-        let s = process_code_blocks(&mut chapter).unwrap();
-        assert!(!s.contains(r#"|foo|bar|\n|---|---|\n|a|b|"#), "{}", s);
-    }
-
+    /// Ordinary chapters are untouched, including mdBook extensions unknown to this parser.
     #[test]
     fn dont_break_emphasis_in_tables() {
-        let content = fs::read_to_string("demo-book/src/no_chess.md").unwrap();
-        let mut chapter = Chapter::new("test", content.clone(), ".", vec![]);
-        let s = process_code_blocks(&mut chapter).unwrap();
-        assert_eq!(content, s);
+        let content = include_str!("../demo-book/src/no_chess.md");
+        let chapter = Chapter::new("test", content.into(), ".", vec![]);
+        assert_eq!(
+            process_code_blocks(&chapter).expect("valid chapter"),
+            content
+        );
+    }
+
+    /// A variation must not replace the saved main line when overwrite is disabled.
+    #[test]
+    fn variations_preserve_saved_position() {
+        let mut boards = HashMap::new();
+        process_chess_block("moves: [e4]\nsave: main", &mut boards).expect("main line");
+        let original = boards["main"];
+        process_chess_block(
+            "load: main\nmoves: [c5]\noverwrite: false\nsave: sicilian",
+            &mut boards,
+        )
+        .expect("variation");
+        assert_eq!(boards["main"], original);
+        assert_eq!(
+            boards["sicilian"].piece_on(Square::C5),
+            Some(chess::Piece::Pawn)
+        );
+        process_chess_block("load: main\nmoves: [e5]", &mut boards).expect("main continuation");
+        assert_eq!(
+            boards["main"].piece_on(Square::E5),
+            Some(chess::Piece::Pawn)
+        );
+    }
+
+    /// Invalid input must fail the build with location context rather than inventing a position.
+    #[test]
+    fn invalid_position_reports_location() {
+        let chapter = Chapter::new(
+            "Endgames",
+            "```chess\nload: missing\n```".into(),
+            ".",
+            vec![],
+        );
+        let error = format!(
+            "{:#}",
+            process_code_blocks(&chapter).expect_err("unknown saved board")
+        );
+        assert!(
+            error.contains("Endgames") && error.contains("block 1") && error.contains("missing")
+        );
     }
 }

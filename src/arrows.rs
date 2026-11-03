@@ -1,11 +1,6 @@
-use crate::*;
 use chess::Square;
-use serde::de::{self, Deserialize, Deserializer, Unexpected, Visitor};
-use std::fmt;
+use serde::{Deserialize, Deserializer};
 use std::str::FromStr;
-
-pub const ARROW_COLOUR: &'static str = "#008a00";
-pub const ARROW_OPACITY: f32 = 0.50196078;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Line {
@@ -15,144 +10,42 @@ pub struct Line {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
-/// Type of arrow head
 pub enum ArrowHead {
-    /// An arrow like `start -> end`
     Single,
-    /// An arrow like `start <-> end`
     Double,
 }
 
 impl<'de> Deserialize<'de> for Line {
-    fn deserialize<D>(deserializer: D) -> Result<Line, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        deserializer.deserialize_str(ArrowVisitor)
-    }
-}
-
-struct ArrowVisitor;
-
-impl<'de> Visitor<'de> for ArrowVisitor {
-    type Value = Line;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            formatter,
-            "a string containing two squares joined by a line or arrow"
-        )
-    }
-
-    fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        let splits: Vec<&str> = s.split("-").collect();
-        if splits.len() != 2 {
-            Err(de::Error::invalid_value(Unexpected::Str(s), &self))
-        } else {
-            if splits[0].len() < 2 || splits[0].len() > 3 {
-                Err(de::Error::invalid_value(Unexpected::Str(splits[0]), &self))
-            } else if splits[1].len() < 2 || splits[1].len() > 3 {
-                Err(de::Error::invalid_value(Unexpected::Str(splits[1]), &self))
-            } else {
-                let square_1 = &splits[0][..2];
-
-                let square_1 = match Square::from_str(square_1) {
-                    Ok(s) => s,
-                    Err(_) => {
-                        return Err(de::Error::invalid_value(Unexpected::Str(square_1), &self));
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let value = String::deserialize(deserializer)?;
+        for (separator, head, reverse) in [
+            ("<->", Some(ArrowHead::Double), false),
+            ("->", Some(ArrowHead::Single), false),
+            ("<-", Some(ArrowHead::Single), true),
+            ("-", None, false),
+        ] {
+            if let Some((a, b)) = value.split_once(separator) {
+                let parse = |s: &str| {
+                    if s.len() != 2 || !s.is_ascii() {
+                        return Err(serde::de::Error::custom("expected a square from a1 to h8"));
                     }
+                    Square::from_str(s).map_err(serde::de::Error::custom)
                 };
-
-                let square_2 = match splits[1].len() {
-                    2 => splits[1],
-                    3 => &splits[1][1..],
-                    _ => unreachable!(),
-                };
-
-                let square_2 = match Square::from_str(square_2) {
-                    Ok(s) => s,
-                    Err(_) => {
-                        return Err(de::Error::invalid_value(Unexpected::Str(square_2), &self));
-                    }
-                };
-
-                let (invert, head) = match (splits[0].chars().nth(2), splits[1].chars().nth(0)) {
-                    (Some('<'), Some('>')) => (false, Some(ArrowHead::Double)),
-                    (Some('<'), _) => (true, Some(ArrowHead::Single)),
-                    (None, Some('>')) => (false, Some(ArrowHead::Single)),
-                    (Some(t), _) | (_, Some(t)) => {
-                        if splits[0].len() != 2 && splits[1].len() != 2 {
-                            return Err(de::Error::invalid_value(Unexpected::Char(t), &self));
-                        } else {
-                            (false, None)
-                        }
-                    }
-                    (None, None) => (false, None),
-                };
-
-                if invert {
-                    Ok(Line {
-                        start: square_2,
-                        end: square_1,
+                let (start, end) = (parse(a)?, parse(b)?);
+                return Ok(if reverse {
+                    Self {
+                        start: end,
+                        end: start,
                         head,
-                    })
+                    }
                 } else {
-                    Ok(Line {
-                        start: square_1,
-                        end: square_2,
-                        head,
-                    })
-                }
+                    Self { start, end, head }
+                });
             }
         }
-    }
-}
-
-impl Line {
-    /// Generates an SVG string for the arrow. Currently relies on marker definitions written into
-    /// board.
-    pub fn svg_string(&self) -> String {
-        if self.start == self.end {
-            String::new()
-        } else {
-            let (mut x1, mut y1) = coordinate_from_square(&self.start);
-            let (mut x2, mut y2) = coordinate_from_square(&self.end);
-            const RETREAT: f32 = 4.0;
-
-            // Move to centre of square;
-            x1 += 5.0;
-            y1 += 5.0;
-            x2 += 5.0;
-            y2 += 5.0;
-
-            let norm = ((x2 - x1).powi(2) + (y2 - y1).powi(2)).sqrt();
-            let t = RETREAT / norm;
-
-            x1 = (1.0 - t) * x1 + t * x2;
-            y1 = (1.0 - t) * y1 + t * y2;
-
-            let t = (norm - RETREAT) / norm;
-            x2 = (1.0 - t) * x1 + t * x2;
-            y2 = (1.0 - t) * y1 + t * y2;
-
-            let mut s = format!(
-                r##"<line x1="{}" y1="{}" x2="{}" y2={} stroke="green" stroke-width="2.0" "##,
-                x1, y1, x2, y2
-            );
-
-            match self.head.as_ref() {
-                Some(ArrowHead::Single) => s.push_str(r#" marker-end="url(#endarrow)"/>"#),
-                Some(ArrowHead::Double) => {
-                    s.push_str(r#" marker-start="url(#startarrow)" marker-end="url(#endarrow)"/>"#)
-                }
-                None => s.push_str("/>"),
-            }
-
-            s
-        }
+        Err(serde::de::Error::custom(
+            "expected a1-b2, a1->b2, a1<-b2 or a1<->b2",
+        ))
     }
 }
 
@@ -171,7 +64,7 @@ mod tests {
         let x = serde_json::from_str::<TestStruct>(
             r#"{"lines": ["d4->g6", "c3<-c4", "g7-h7", "a1<->a8"]}"#,
         )
-        .unwrap();
+        .expect("valid arrow fixture");
 
         let expected = vec![
             Line {

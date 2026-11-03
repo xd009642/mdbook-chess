@@ -1,15 +1,16 @@
 use chess_preproc::*;
 use clap::{Arg, ArgMatches, Command};
-use mdbook::errors::Error;
-use mdbook::preprocess::{CmdPreprocessor, Preprocessor};
+use mdbook_preprocessor::errors::Error;
+use mdbook_preprocessor::Preprocessor;
 use semver::{Version, VersionReq};
 use std::{env, io, process};
 use tracing::{info, warn};
 use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::{Layer, Registry};
 
-pub mod arrows;
+mod arrows;
 mod chess_preproc;
+mod render;
 
 pub fn make_app() -> Command {
     Command::new(PREPROCESSOR_NAME)
@@ -44,32 +45,31 @@ fn main() {
     if let Some(sub_args) = matches.subcommand_matches("supports") {
         handle_supports(sub_args);
     } else if let Err(e) = handle_preprocessing() {
-        info!("{}", e);
+        tracing::error!("{:#}", e);
         process::exit(1);
     }
 }
 
 fn handle_preprocessing() -> Result<(), Error> {
-    let (ctx, book) = CmdPreprocessor::parse_input(io::stdin())?;
+    let (ctx, book) = mdbook_preprocessor::parse_input(io::stdin())?;
 
     let book_version = Version::parse(&ctx.mdbook_version)?;
-    let version_req = VersionReq::parse(mdbook::MDBOOK_VERSION)?;
+    let version_req = VersionReq::parse(mdbook_preprocessor::MDBOOK_VERSION)?;
 
     if !version_req.matches(&book_version) {
         warn!(
             "Warning: The {} plugin was built against version {} of mdbook, \
              but we're being called from version {}",
             PREPROCESSOR_NAME,
-            mdbook::MDBOOK_VERSION,
+            mdbook_preprocessor::MDBOOK_VERSION,
             ctx.mdbook_version
         );
     }
     info!("Processing!");
 
     let preproc = ChessPreprocessor;
-    let processed_book = preproc.run(&ctx, book).expect("Failed to preprocess book");
-    let s =
-        serde_json::to_string(&processed_book).expect("Failed to convert processed book to json");
+    let processed_book = preproc.run(&ctx, book)?;
+    let s = serde_json::to_string(&processed_book)?;
     println!("{}", s);
     Ok(())
 }
@@ -77,7 +77,10 @@ fn handle_preprocessing() -> Result<(), Error> {
 fn handle_supports(sub_args: &ArgMatches) -> ! {
     let preproc = ChessPreprocessor;
     let renderer: &String = sub_args.get_one("renderer").expect("Required argument");
-    if preproc.supports_renderer(renderer.as_str()) {
+    if preproc
+        .supports_renderer(renderer.as_str())
+        .expect("Failed to determine renderer support")
+    {
         process::exit(0);
     } else {
         process::exit(1);
