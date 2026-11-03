@@ -47,6 +47,24 @@ pub struct BoardBlock {
     animation: Option<Animation>,
 }
 
+impl Default for BoardBlock {
+    fn default() -> Self {
+        Self {
+            load: None,
+            save: None,
+            board: None,
+            moves: vec![],
+            overwrite: true,
+            highlights: vec![],
+            lines: vec![],
+            knight_lines: vec![],
+            appearance: Appearance::default(),
+            output: None,
+            animation: None,
+        }
+    }
+}
+
 pub struct ChessPreprocessor;
 
 impl Preprocessor for ChessPreprocessor {
@@ -118,6 +136,16 @@ fn process_code_blocks(chapter: &Chapter, exporter: &mut Exporter) -> Result<Str
                 output.push_str(&chapter.content[copied..start]);
                 output.push_str(&svg);
                 output.push('\n');
+                // HTML needs a blank separator. Retain quote markers and list indentation
+                // on that separator so it does not terminate the enclosing container.
+                let line_start = chapter.content[..start].rfind('\n').map_or(0, |i| i + 1);
+                for ch in chapter.content[line_start..start].chars() {
+                    output.push(if ch == '>' || ch.is_whitespace() {
+                        ch
+                    } else {
+                        ' '
+                    });
+                }
                 copied = range.end;
             }
             _ => {}
@@ -128,8 +156,7 @@ fn process_code_blocks(chapter: &Chapter, exporter: &mut Exporter) -> Result<Str
 }
 
 fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Result<Diagram, Error> {
-    let mut block: BoardBlock =
-        serde_yaml::from_str(if input.trim().is_empty() { "{}" } else { input })?;
+    let mut block = serde_yaml::from_str::<Option<BoardBlock>>(input)?.unwrap_or_default();
     block.appearance.validate()?;
     if let Some(animation) = &block.animation {
         animation.validate(block.moves.len())?;
@@ -291,6 +318,19 @@ mod tests {
     use super::*;
     use chess::Square;
 
+    /// The README's empty/comment-only fences produce the same starting position as board: start.
+    #[test]
+    fn empty_and_comment_only_blocks() {
+        for yaml in ["", "# Starting position\n"] {
+            let diagram = process_chess_block(yaml, &mut HashMap::new()).expect("empty board");
+            assert!(diagram
+                .appearance
+                .alt
+                .expect("description")
+                .contains(&Board::default().to_string()));
+        }
+    }
+
     /// Replay includes the initial state and each legal result; special moves alter all affected squares.
     #[test]
     fn replay_special_moves() {
@@ -331,6 +371,33 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// Inserting the HTML separator must not split a quoted diagram from its explanation.
+    #[test]
+    fn quoted_diagram_keeps_its_explanation() {
+        let chapter = Chapter::new(
+            "test",
+            "> ```chess\n> ```\n> **explanation**\n".into(),
+            ".",
+            vec![],
+        );
+        let content = process_code_blocks(
+            &chapter,
+            &mut Exporter::new(".".into(), "html", Output::Auto),
+        )
+        .expect("quoted diagram");
+        let events: Vec<_> = Parser::new(&content).collect();
+        assert_eq!(
+            events
+                .iter()
+                .filter(|e| matches!(e, Event::Start(Tag::BlockQuote(_))))
+                .count(),
+            1
+        );
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, Event::Start(Tag::Strong))));
     }
 
     /// En-passant normalization must still reject a capture that exposes the player's king.

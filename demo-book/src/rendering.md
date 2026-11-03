@@ -19,6 +19,7 @@ lines: [f3->e5, a1<->a8]
 > moves: [d4, d5]
 > lines: [c1->f4]
 > ~~~
+> **The explanation stays in the same quotation.**
 
 1. A diagram inside a list:
 
