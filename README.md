@@ -156,22 +156,58 @@ belong to that renderer; accepting `supports` does not guarantee that every
 third-party backend can consume images. See the [portable examples](demo-book/src/portable.md),
 including a nested chapter.
 
-# Roadmap
+# Animation
 
-## Potential future features
+Add `animation: {format: player}` to replay this block’s `moves` from its loaded
+or starting position. The final position still participates in `save` and
+`overwrite` exactly as for a static board.
 
-These are features I'd be willing to do if there was demand and they were
-sufficiently easy or willing to accept PRs for.
+```yaml
+moves: [e4, e5, Nf3, Nc6, Bb5]
+animation: {format: player, delay: 800, repeat: true}
+coordinates: true
+last-move: true
+```
 
-* GIF generation
+`player` (the default format) provides Previous/Next, a keyboard-operable slider,
+and Play/Pause in HTML. It starts paused and stops when the page is hidden or
+printed. With JavaScript disabled, the final board remains visible.
 
-## Unlikely features
+`format: gif` creates a downloadable GIF and a static preview with a Play/Stop
+button. It never starts automatically, including when reduced motion is requested.
+GIFs do not have interactive stepping; use the player for study. Exported GIFs
+animate according to the application displaying them.
 
-These are features where they will only be added via PR but the PR may
-not be accepted
+`delay` is milliseconds per position (default 800, range 100–60000 in steps of
+10). `repeat` defaults to `true`. Animations accept 1–511 moves, giving at most
+512 frames including the initial position. GIF frames are rasterized and encoded
+one at a time; larger sizes and longer games increase build time and file size.
 
-* Chess variants
-* Eval bar
+Arrows, explicit highlights and assessments appear only on the final frame;
+`last-move` highlights each move during replay. The HTML animation takes precedence
+over `output`. Non-HTML renderers receive a static final-position image using the
+selected `output` format. HTML printing also shows the final position, regardless
+of the selected replay step. No remote scripts or runtime services are needed;
+HTML controls load generated JavaScript and CSS from the book’s asset directory.
+
+See [the animation examples](demo-book/src/animation.md).
+
+# Further maintenance
+
+The notebook examples suggest these useful next additions:
+
+* PGN import with comments and recursive variations, so complete annotated games
+  do not need to be converted into YAML move arrays.
+* A variation tree and move-list navigation linked to surrounding explanatory text.
+* Coordinate/UCI move input (see issue #5), alongside SAN, with explicit notation
+  selection to avoid ambiguous input.
+* Per-move commentary and annotations in replays, instead of only final-frame annotations.
+* Puzzle mode with a hidden solution and an accessible static fallback.
+* Book-level presentation defaults and additional integration checks for specific
+  EPUB, Pandoc and Typst mdBook plugins.
+
+Chess variants and engine-derived evaluation bars remain outside the current
+standard-chess scope. Author-supplied assessments do not imply engine analysis.
 
 # License and Copyright
 

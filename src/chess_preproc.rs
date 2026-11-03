@@ -1,3 +1,4 @@
+use crate::animation::{Animation, Frame};
 use crate::arrows::Line;
 use crate::options::{parse_square, Appearance};
 use crate::output::{Diagram, Exporter, Output};
@@ -43,6 +44,7 @@ pub struct BoardBlock {
     #[serde(flatten)]
     appearance: Appearance,
     output: Option<Output>,
+    animation: Option<Animation>,
 }
 
 pub struct ChessPreprocessor;
@@ -129,8 +131,10 @@ fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Resu
     let mut block: BoardBlock =
         serde_yaml::from_str(if input.trim().is_empty() { "{}" } else { input })?;
     block.appearance.validate()?;
-    let mut last_move = None;
-    let mut board = match block.board.as_deref() {
+    if let Some(animation) = &block.animation {
+        animation.validate(block.moves.len())?;
+    }
+    let initial = match block.board.as_deref() {
         Some("start") => Board::default(),
         Some(fen) => Board::from_str(fen).map_err(|e| anyhow!("invalid FEN in 'board': {e}"))?,
         None => match block.load.as_deref() {
@@ -140,12 +144,10 @@ fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Resu
                 .with_context(|| format!("unknown saved board '{name}'"))?,
         },
     };
-    for san in &block.moves {
-        let chess_move = ChessMove::from_san(&board, san)
-            .map_err(|e| anyhow!("invalid SAN move '{san}': {e}"))?;
-        board = board.make_move_new(chess_move);
-        last_move = Some(chess_move);
-    }
+    let positions = play_moves(initial, &block.moves)?;
+    let (board, last_move) = *positions
+        .last()
+        .expect("sequence includes initial position");
     let mut highlights = block
         .highlights
         .iter()
@@ -181,6 +183,48 @@ fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Resu
             boards.insert(name.clone(), board);
         }
     }
+    let mut frames = Vec::new();
+    if block.animation.is_some() {
+        for (i, (position, last_move)) in positions.iter().enumerate() {
+            let final_frame = i == positions.len() - 1;
+            let mut appearance = block.appearance.clone();
+            let mut frame_highlights = if final_frame {
+                block
+                    .highlights
+                    .iter()
+                    .map(|s| parse_square(s))
+                    .collect::<Result<Vec<_>, _>>()?
+            } else {
+                vec![]
+            };
+            if !final_frame {
+                appearance.annotations.clear();
+            }
+            if appearance.last_move {
+                if let Some(m) = last_move {
+                    frame_highlights.extend([m.get_source(), m.get_dest()]);
+                }
+            }
+            frames.push(Frame {
+                svg: render::board(
+                    position,
+                    &frame_highlights,
+                    if final_frame { &block.lines } else { &[] },
+                    if final_frame {
+                        &block.knight_lines
+                    } else {
+                        &[]
+                    },
+                    &appearance,
+                ),
+                label: if i == 0 {
+                    "Initial position".into()
+                } else {
+                    format!("{} / {} · {}", i, block.moves.len(), block.moves[i - 1])
+                },
+            });
+        }
+    }
     block
         .appearance
         .alt
@@ -196,7 +240,22 @@ fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Resu
         svg,
         appearance: block.appearance,
         output: block.output,
+        animation: block.animation,
+        frames,
     })
+}
+
+/// Every replay frame is a legal position, including captures, castling and promotions.
+fn play_moves(initial: Board, moves: &[String]) -> Result<Vec<(Board, Option<ChessMove>)>, Error> {
+    let mut board = initial;
+    let mut positions = vec![(board, None)];
+    for san in moves {
+        let chess_move = ChessMove::from_san(&board, san)
+            .map_err(|e| anyhow!("invalid SAN move '{san}': {e}"))?;
+        board = board.make_move_new(chess_move);
+        positions.push((board, Some(chess_move)));
+    }
+    Ok(positions)
 }
 
 #[cfg(test)]
