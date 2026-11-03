@@ -10,6 +10,7 @@ use tracing_subscriber::{Layer, Registry};
 
 mod arrows;
 mod chess_preproc;
+mod options;
 mod render;
 
 pub fn make_app() -> Command {
