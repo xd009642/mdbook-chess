@@ -166,13 +166,13 @@ pub(crate) fn board(
         );
         document.append(
             Circle::new()
-                .set("cx", x + 8.0)
-                .set("cy", y + 2.0)
+                .set("cx", x + 7.5)
+                .set("cy", y + 2.5)
                 .set("r", 2.3)
                 .set("fill", annotation.color()),
         );
         document.append(
-            label(annotation.symbol().into(), x + 8.0, y + 3.0)
+            label(annotation.symbol().into(), x + 7.5, y + 3.5)
                 .set("fill", "white")
                 .set("font-weight", "bold"),
         );
