@@ -31,10 +31,10 @@ For an example book just look to the provided [demo-book](./demo-book).
 
 # Usage
 
-Currently the chess boards are specified via a very simple YAML structure. With
-5 possible fields:
+Chess boards are specified in YAML:
 
-* load - either "start" for the starting board or a FEN string. If not provided it's default starting board
+* board - "start" or a FEN string for a new position
+* load - a saved board name or "start"; omitted means the starting position
 * save - name to save board under (can be a list)
 * moves - list of moves
 * overwrite - boolean of whether to overwrite saved version of the board with these moves
@@ -51,7 +51,7 @@ So we can create a starting board like using a code block with the language set 
 Or like:
 
     ```chess
-    # mdbook seems to hate empty code blocks so have at least a blank line
+    # Empty chess fences also show the starting position.
     ```
 
 _For brevity/formating the backticks and "chess" language specifier will be omitted
@@ -90,11 +90,35 @@ lines: ["e2->e4", "d1<->h5", "a4-h4"]
 ```
 
 
-Generally, if there's a syntax error in the markdown there's a reasonable
-chance you'll see a bunch of SVG text dumped into the book. If this happens
-read the log messages and hopefully an answer will be gleaned.
+Invalid YAML, positions, moves and saved board names fail the build with the chapter
+and chess block number. Saved boards are local to each chapter. Only chess fences
+are replaced; surrounding Markdown is preserved. Backtick and tilde fences work,
+including in lists and block quotes.
 
 For an example of all the features in use please look to the demo book!
+
+# Presentation
+
+Each chess block can set these optional fields:
+
+| Field | Values / default |
+| --- | --- |
+| `orientation` | `white` (default) or `black`; pieces stay upright |
+| `coordinates` | `true` to show rank/file labels on all sides; default `false` |
+| `theme` | `classic` (default), `green`, `blue`, `monochrome` |
+| `colors` | Override `light`, `dark`, `highlight`, `arrow` with quoted `#RRGGBB` colors |
+| `size` | Width in pixels, 64–2048; default 302, shrinks to fit its container |
+| `align` | `left` (default), `center`, `right` |
+| `caption` | Plain text beneath the board |
+| `alt` | Accessible description; defaults to the side to move and FEN |
+| `last-move` | Highlight the last move in this block; default `false` |
+| `knight-lines` | The same syntax as `lines`, drawn with a right-angle bend; endpoints must be a knight’s move apart |
+| `annotations` | Square-to-assessment map: `brilliant` (!!), `good` (!), `interesting` (!?), `dubious` (?!), `mistake` (?), `blunder` (??) |
+
+Assessments are supplied by the author, not calculated by an engine. Themes use
+explicit colors so diagrams remain legible when exported or printed. Highlight
+squares, arrows and annotations use chess coordinates in either orientation.
+See [the presentation examples](demo-book/src/presentation.md).
 
 # Roadmap
 
@@ -104,12 +128,6 @@ These are features I'd be willing to do if there was demand and they were
 sufficiently easy or willing to accept PRs for.
 
 * GIF generation
-* L shaped move arrow for horsey
-* Chess.com style icons (blunder, excellent etc)
-* Styling and theming
-* More layout options in page
-* Rank and file labels
-* Flip the board
 
 ## Unlikely features
 

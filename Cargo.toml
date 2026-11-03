@@ -15,10 +15,14 @@ chess = "3.2.0"
 clap = { version = "4.5", features = ["derive"] }
 mdbook-preprocessor = "0.5.4"
 pulldown-cmark = "0.13"
-pulldown-cmark-to-cmark = "22"
+svg = "0.18"
+anyhow = "1"
 semver = "1.0.13"
 serde = { version = "1.0.142", features = ["derive"] }
 serde_json = "1.0.83"
 serde_yaml = "0.9.4"
 tracing = { version = "0.1.36", features = ["std"], default-features = false }
 tracing-subscriber = { version = "0.3.15", features = ["env-filter", "smallvec", "fmt", "ansi", "std"], default-features = false }
+
+[dev-dependencies]
+roxmltree = "0.21"
