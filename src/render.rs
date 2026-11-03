@@ -31,6 +31,18 @@ pub(crate) fn coordinate(square: Square, orientation: &Orientation) -> (f32, f32
     }
 }
 
+pub(crate) fn description(board: &Board) -> String {
+    format!(
+        "{} to move. Position: {}",
+        if board.side_to_move() == Color::White {
+            "White"
+        } else {
+            "Black"
+        },
+        board
+    )
+}
+
 pub(crate) fn board(
     board: &Board,
     highlights: &[Square],
@@ -39,17 +51,7 @@ pub(crate) fn board(
     options: &Appearance,
 ) -> String {
     let (light_color, dark_color, highlight_color, arrow_color) = options.palette();
-    let title = options.alt.clone().unwrap_or_else(|| {
-        format!(
-            "{} to move. Position: {}",
-            if board.side_to_move() == Color::White {
-                "White"
-            } else {
-                "Black"
-            },
-            board
-        )
-    });
+    let title = options.alt.clone().unwrap_or_else(|| description(board));
     let (origin, extent) = if options.coordinates {
         (-5, 90)
     } else {
