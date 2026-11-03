@@ -36,7 +36,7 @@ Chess boards are specified in YAML:
 * board - "start" or a FEN string for a new position
 * load - a saved board name or "start"; omitted means the starting position
 * save - name to save board under (can be a list)
-* moves - list of moves
+* moves - list of SAN moves, including castling (`O-O`), promotion (`a8=Q+`) and en passant (`exd6`)
 * overwrite - boolean of whether to overwrite saved version of the board with these moves
 * highlights - highlight a square on the board a list of squares
 * lines - lines and arrows from square to square (currently only straight)
@@ -120,22 +120,94 @@ explicit colors so diagrams remain legible when exported or printed. Highlight
 squares, arrows and annotations use chess coordinates in either orientation.
 See [the presentation examples](demo-book/src/presentation.md).
 
-# Roadmap
+# Renderers and image files
 
-## Potential future features
+`output` can be set in a chess block or as the default in `book.toml`:
 
-These are features I'd be willing to do if there was demand and they were
-sufficiently easy or willing to accept PRs for.
+```toml
+[preprocessor.chess]
+output = "auto"
+```
 
-* GIF generation
+| Output | Behavior |
+| --- | --- |
+| `auto` (default) | Inline SVG for `html`; PNG image links for other renderers |
+| `inline-svg` | Embedded SVG with responsive layout and a visible caption; requires HTML support |
+| `svg` | Standard Markdown image pointing to a standalone vector file |
+| `png` | Standard Markdown image pointing to a raster image |
 
-## Unlikely features
+Image modes use `size` as their intrinsic pixel dimensions. `alt` becomes the
+Markdown image description and `caption` becomes its image title. Put visible
+captions in surrounding prose for portable documents; `align` controls inline
+HTML only. PNG labels use fonts installed on the build machine (install a
+sans-serif font when building in a minimal container).
 
-These are features where they will only be added via PR but the PR may
-not be accepted
+Assets are written beneath `<book.src>/mdbook-chess-assets/`. Add that directory
+to your book’s `.gitignore`. Filenames are content hashes, so duplicate diagrams
+share files and unchanged builds leave their timestamps alone. Old files are not
+automatically deleted; remove the generated directory before a clean build if
+needed. The source directory must be writable when exporting images.
 
-* Chess variants
-* Eval bar
+HTML and Chromium printing work with inline SVG and exported images. For Typst,
+LaTeX/Pandoc, EPUB or other backends, choose an image format that the renderer can
+load and ensure it resolves ordinary chapter-relative image links. PNG is the
+conservative default. Renderer-specific layout and asset-copying behavior still
+belong to that renderer; accepting `supports` does not guarantee that every
+third-party backend can consume images. See the [portable examples](demo-book/src/portable.md),
+including a nested chapter.
+
+# Animation
+
+Add `animation: {format: player}` to replay this block’s `moves` from its loaded
+or starting position. The final position still participates in `save` and
+`overwrite` exactly as for a static board.
+
+```yaml
+moves: [e4, e5, Nf3, Nc6, Bb5]
+animation: {format: player, delay: 800, repeat: true}
+coordinates: true
+last-move: true
+```
+
+`player` (the default format) provides Previous/Next, a keyboard-operable slider,
+and Play/Pause in HTML. It starts paused and stops when the page is hidden or
+printed. With JavaScript disabled, the final board remains visible.
+
+`format: gif` creates a downloadable GIF and a static preview with a Play/Stop
+button. It never starts automatically, including when reduced motion is requested.
+GIFs do not have interactive stepping; use the player for study. Exported GIFs
+animate according to the application displaying them.
+
+`delay` is milliseconds per position (default 800, range 100–60000 in steps of
+10). `repeat` defaults to `true`. Animations accept 1–511 moves, giving at most
+512 frames including the initial position. GIF frames are rasterized and encoded
+one at a time; larger sizes and longer games increase build time and file size.
+
+Arrows, explicit highlights and assessments appear only on the final frame;
+`last-move` highlights each move during replay. The HTML animation takes precedence
+over `output`. Non-HTML renderers receive a static final-position image using the
+selected `output` format. HTML printing also shows the final position, regardless
+of the selected replay step. No remote scripts or runtime services are needed;
+HTML controls load generated JavaScript and CSS from the book’s asset directory.
+
+See [the animation examples](demo-book/src/animation.md).
+
+# Further maintenance
+
+The notebook examples suggest these useful next additions:
+
+* PGN import with comments and recursive variations, so complete annotated games
+  do not need to be converted into YAML move arrays.
+* A variation tree and move-list navigation linked to surrounding explanatory text.
+* Coordinate/UCI move input (see issue #5), alongside SAN, with explicit notation
+  selection to avoid ambiguous input.
+* Per-move commentary and annotations in replays, instead of only final-frame annotations.
+* Puzzle mode with a hidden solution and an accessible static fallback.
+* Book-level presentation defaults and additional integration checks for specific
+  EPUB, Pandoc and Typst mdBook plugins.
+
+Chess variants and engine-derived evaluation bars remain outside the current
+standard-chess scope. Author-supplied assessments do not imply engine analysis.
 
 # License and Copyright
 

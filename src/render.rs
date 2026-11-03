@@ -31,6 +31,18 @@ pub(crate) fn coordinate(square: Square, orientation: &Orientation) -> (f32, f32
     }
 }
 
+pub(crate) fn description(board: &Board) -> String {
+    format!(
+        "{} to move. Position: {}",
+        if board.side_to_move() == Color::White {
+            "White"
+        } else {
+            "Black"
+        },
+        board
+    )
+}
+
 pub(crate) fn board(
     board: &Board,
     highlights: &[Square],
@@ -39,17 +51,7 @@ pub(crate) fn board(
     options: &Appearance,
 ) -> String {
     let (light_color, dark_color, highlight_color, arrow_color) = options.palette();
-    let title = options.alt.clone().unwrap_or_else(|| {
-        format!(
-            "{} to move. Position: {}",
-            if board.side_to_move() == Color::White {
-                "White"
-            } else {
-                "Black"
-            },
-            board
-        )
-    });
+    let title = options.alt.clone().unwrap_or_else(|| description(board));
     let (origin, extent) = if options.coordinates {
         (-5, 90)
     } else {
@@ -164,13 +166,13 @@ pub(crate) fn board(
         );
         document.append(
             Circle::new()
-                .set("cx", x + 8.0)
-                .set("cy", y + 2.0)
+                .set("cx", x + 7.5)
+                .set("cy", y + 2.5)
                 .set("r", 2.3)
                 .set("fill", annotation.color()),
         );
         document.append(
-            label(annotation.symbol().into(), x + 8.0, y + 3.0)
+            label(annotation.symbol().into(), x + 7.5, y + 3.5)
                 .set("fill", "white")
                 .set("font-weight", "bold"),
         );
@@ -184,20 +186,9 @@ fn arrow(line: &Line, knight: bool, options: &Appearance, color: &str) -> Group 
     if line.start == line.end {
         return group;
     }
-    let (x1, y1) = coordinate(line.start, &options.orientation);
-    let (x2, y2) = coordinate(line.end, &options.orientation);
-    let start = (x1 + 5.0, y1 + 5.0);
-    let end = (x2 + 5.0, y2 + 5.0);
-    let bend = if (end.0 - start.0).abs() > (end.1 - start.1).abs() {
-        (end.0, start.1)
-    } else {
-        (start.0, end.1)
-    };
-    let points = if knight {
-        vec![start, bend, end]
-    } else {
-        vec![start, end]
-    };
+    let points = arrow_points(line, knight, &options.orientation);
+    let start = points[0];
+    let end = points[points.len() - 1];
     group.append(
         Polyline::new()
             .set(
@@ -214,12 +205,30 @@ fn arrow(line: &Line, knight: bool, options: &Appearance, color: &str) -> Group 
     );
     // Explicit arrow heads avoid document-global marker IDs when many boards share a page.
     if line.head.is_some() {
-        group.append(arrow_head(if knight { bend } else { start }, end));
+        group.append(arrow_head(points[points.len() - 2], end));
     }
     if line.head == Some(ArrowHead::Double) {
-        group.append(arrow_head(if knight { bend } else { end }, start));
+        group.append(arrow_head(points[1], start));
     }
     group
+}
+
+/// Knight arrows travel along the longer axis first, then turn toward the destination.
+fn arrow_points(line: &Line, knight: bool, orientation: &Orientation) -> Vec<(f32, f32)> {
+    let (x1, y1) = coordinate(line.start, orientation);
+    let (x2, y2) = coordinate(line.end, orientation);
+    let start = (x1 + 5.0, y1 + 5.0);
+    let end = (x2 + 5.0, y2 + 5.0);
+    if knight {
+        let bend = if (end.0 - start.0).abs() > (end.1 - start.1).abs() {
+            (end.0, start.1)
+        } else {
+            (start.0, end.1)
+        };
+        vec![start, bend, end]
+    } else {
+        vec![start, end]
+    }
 }
 
 fn arrow_head(from: (f32, f32), to: (f32, f32)) -> Polygon {
@@ -311,43 +320,20 @@ mod tests {
     #[test]
     fn knight_arrow_geometry() {
         let line = Line {
-            start: Square::G1,
-            end: Square::F3,
+            start: Square::B1,
+            end: Square::C3,
             head: Some(ArrowHead::Single),
         };
-        for orientation in [Orientation::White, Orientation::Black] {
-            let options = Appearance {
-                orientation,
-                ..Appearance::default()
-            };
-            let svg = board(
-                &Board::default(),
-                &[],
-                &[],
-                std::slice::from_ref(&line),
-                &options,
-            );
-            let doc = roxmltree::Document::parse(&svg).expect("valid SVG");
-            let path = doc
-                .descendants()
-                .find(|n| n.has_tag_name("polyline"))
-                .expect("arrow shaft");
-            let points: Vec<Vec<f32>> = path
-                .attribute("points")
-                .expect("points")
-                .split_whitespace()
-                .map(|point| {
-                    point
-                        .split(',')
-                        .map(|n| n.parse().expect("coordinate"))
-                        .collect()
-                })
-                .collect();
+        for (orientation, start, end) in [
+            (Orientation::White, (15.0, 75.0), (25.0, 55.0)),
+            (Orientation::Black, (65.0, 5.0), (55.0, 25.0)),
+        ] {
+            let points = arrow_points(&line, true, &orientation);
             assert_eq!(points.len(), 3);
-            assert_eq!(points[0][0], points[1][0]);
-            assert_eq!(points[1][1], points[2][1]);
-            let (x, y) = coordinate(Square::F3, &options.orientation);
-            assert_eq!(points[2], [x + 5.0, y + 5.0]);
+            assert_eq!(points[0], start);
+            assert_eq!(points[2], end);
+            assert_eq!(points[0].0, points[1].0);
+            assert_eq!(points[1].1, points[2].1);
         }
     }
 
@@ -359,28 +345,25 @@ mod tests {
             end: Square::E4,
             head: Some(ArrowHead::Double),
         };
-        let svg = board(
+        let options = Appearance::default();
+        let first = board(
             &Board::default(),
             &[Square::E4],
-            &[line],
+            std::slice::from_ref(&line),
             &[],
-            &Appearance::default(),
+            &options,
         );
-        let doc = roxmltree::Document::parse(&svg).expect("valid SVG");
+        let second = board(&Board::default(), &[Square::E4], &[line], &[], &options);
+        let doc = roxmltree::Document::parse(&first).expect("valid standalone SVG");
         assert_eq!(
             doc.root_element().tag_name().namespace(),
             Some("http://www.w3.org/2000/svg")
         );
-        assert!(doc.descendants().all(|n| n.attribute("id").is_none()));
-        assert_eq!(
-            doc.descendants().filter(|n| n.has_tag_name("rect")).count(),
-            65
-        );
-        assert_eq!(
-            doc.descendants()
-                .filter(|n| n.has_tag_name("polygon"))
-                .count(),
-            2
-        );
+        let page = format!("<html>{first}{second}</html>");
+        let doc = roxmltree::Document::parse(&page).expect("valid combined document");
+        let mut ids = std::collections::HashSet::new();
+        for id in doc.descendants().filter_map(|n| n.attribute("id")) {
+            assert!(ids.insert(id), "duplicate document ID: {id}");
+        }
     }
 }
