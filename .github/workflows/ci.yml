@@ -29,3 +29,9 @@ jobs:
           cargo test 
       - name: check formatting
         run: cargo fmt -- --check
+      - name: build example book
+        if: matrix.version == 'stable'
+        run: |
+          cargo build --locked
+          cargo install mdbook --version 0.5.4 --locked
+          PATH="$PWD/target/debug:$PATH" mdbook build demo-book
