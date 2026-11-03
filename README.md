@@ -120,6 +120,42 @@ explicit colors so diagrams remain legible when exported or printed. Highlight
 squares, arrows and annotations use chess coordinates in either orientation.
 See [the presentation examples](demo-book/src/presentation.md).
 
+# Renderers and image files
+
+`output` can be set in a chess block or as the default in `book.toml`:
+
+```toml
+[preprocessor.chess]
+output = "auto"
+```
+
+| Output | Behavior |
+| --- | --- |
+| `auto` (default) | Inline SVG for `html`; PNG image links for other renderers |
+| `inline-svg` | Embedded SVG with responsive layout and a visible caption; requires HTML support |
+| `svg` | Standard Markdown image pointing to a standalone vector file |
+| `png` | Standard Markdown image pointing to a raster image |
+
+Image modes use `size` as their intrinsic pixel dimensions. `alt` becomes the
+Markdown image description and `caption` becomes its image title. Put visible
+captions in surrounding prose for portable documents; `align` controls inline
+HTML only. PNG labels use fonts installed on the build machine (install a
+sans-serif font when building in a minimal container).
+
+Assets are written beneath `<book.src>/mdbook-chess-assets/`. Add that directory
+to your book’s `.gitignore`. Filenames are content hashes, so duplicate diagrams
+share files and unchanged builds leave their timestamps alone. Old files are not
+automatically deleted; remove the generated directory before a clean build if
+needed. The source directory must be writable when exporting images.
+
+HTML and Chromium printing work with inline SVG and exported images. For Typst,
+LaTeX/Pandoc, EPUB or other backends, choose an image format that the renderer can
+load and ensure it resolves ordinary chapter-relative image links. PNG is the
+conservative default. Renderer-specific layout and asset-copying behavior still
+belong to that renderer; accepting `supports` does not guarantee that every
+third-party backend can consume images. See the [portable examples](demo-book/src/portable.md),
+including a nested chapter.
+
 # Roadmap
 
 ## Potential future features

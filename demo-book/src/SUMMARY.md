@@ -5,3 +5,5 @@
 - [Mixed](./mixed.md)
 - [Compositing and Markdown](./rendering.md)
 - [Board presentation](./presentation.md)
+- [Portable diagrams](./portable.md)
+  - [Nested chapter](./nested/portable.md)

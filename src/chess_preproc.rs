@@ -1,5 +1,6 @@
 use crate::arrows::Line;
 use crate::options::{parse_square, Appearance};
+use crate::output::{Diagram, Exporter, Output};
 use crate::render;
 use anyhow::{anyhow, Context};
 use chess::{Board, ChessMove};
@@ -41,6 +42,7 @@ pub struct BoardBlock {
     knight_lines: Vec<Line>,
     #[serde(flatten)]
     appearance: Appearance,
+    output: Option<Output>,
 }
 
 pub struct ChessPreprocessor;
@@ -50,12 +52,19 @@ impl Preprocessor for ChessPreprocessor {
         PREPROCESSOR_NAME
     }
 
-    fn run(&self, _ctx: &PreprocessorContext, mut book: Book) -> Result<Book, Error> {
+    fn run(&self, ctx: &PreprocessorContext, mut book: Book) -> Result<Book, Error> {
+        let format = ctx
+            .config
+            .get::<Output>("preprocessor.chess.output")?
+            .unwrap_or_default();
+        let mut exporter =
+            Exporter::new(ctx.root.join(&ctx.config.book.src), &ctx.renderer, format);
         let mut result = Ok(());
         book.for_each_mut(|item| {
             if result.is_ok() {
                 if let BookItem::Chapter(chapter) = item {
-                    result = process_code_blocks(chapter).map(|content| chapter.content = content);
+                    result = process_code_blocks(chapter, &mut exporter)
+                        .map(|content| chapter.content = content);
                 }
             }
         });
@@ -82,7 +91,7 @@ impl ManyOrOne {
 }
 
 /// Replace only fenced chess blocks; all other source bytes belong to the author.
-fn process_code_blocks(chapter: &Chapter) -> Result<String, Error> {
+fn process_code_blocks(chapter: &Chapter, exporter: &mut Exporter) -> Result<String, Error> {
     let mut boards = HashMap::new();
     let mut output = String::with_capacity(chapter.content.len());
     let mut copied = 0;
@@ -99,9 +108,11 @@ fn process_code_blocks(chapter: &Chapter) -> Result<String, Error> {
             Event::End(TagEnd::CodeBlock) if block_start.is_some() => {
                 let start = block_start.take().expect("inside chess block");
                 block_number += 1;
-                let svg = process_chess_block(&input, &mut boards).with_context(|| {
-                    format!("chapter '{}', chess block {}", chapter.name, block_number)
-                })?;
+                let svg = process_chess_block(&input, &mut boards)
+                    .and_then(|diagram| exporter.render(&diagram, chapter.path.as_deref()))
+                    .with_context(|| {
+                        format!("chapter '{}', chess block {}", chapter.name, block_number)
+                    })?;
                 output.push_str(&chapter.content[copied..start]);
                 output.push_str(&svg);
                 output.push('\n');
@@ -114,8 +125,8 @@ fn process_code_blocks(chapter: &Chapter) -> Result<String, Error> {
     Ok(output)
 }
 
-fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Result<String, Error> {
-    let block: BoardBlock =
+fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Result<Diagram, Error> {
+    let mut block: BoardBlock =
         serde_yaml::from_str(if input.trim().is_empty() { "{}" } else { input })?;
     block.appearance.validate()?;
     let mut last_move = None;
@@ -170,6 +181,10 @@ fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Resu
             boards.insert(name.clone(), board);
         }
     }
+    block
+        .appearance
+        .alt
+        .get_or_insert_with(|| render::description(&board));
     let svg = render::board(
         &board,
         &highlights,
@@ -177,7 +192,11 @@ fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Resu
         &block.knight_lines,
         &block.appearance,
     );
-    Ok(render::html(&svg, &block.appearance))
+    Ok(Diagram {
+        svg,
+        appearance: block.appearance,
+        output: block.output,
+    })
 }
 
 #[cfg(test)]
@@ -194,7 +213,11 @@ mod tests {
         for fence in ["```", "~~~~"] {
             let content = format!("{before}{fence}chess\n{fence}\n{after}");
             let chapter = Chapter::new("test", content, ".", vec![]);
-            let output = process_code_blocks(&chapter).expect("valid chapter");
+            let output = process_code_blocks(
+                &chapter,
+                &mut Exporter::new(".".into(), "html", Output::Auto),
+            )
+            .expect("valid chapter");
             assert!(output.starts_with(before));
             assert!(output.ends_with(after));
             assert_eq!(output.matches("<svg").count(), 1);
@@ -207,7 +230,11 @@ mod tests {
         let content = include_str!("../demo-book/src/no_chess.md");
         let chapter = Chapter::new("test", content.into(), ".", vec![]);
         assert_eq!(
-            process_code_blocks(&chapter).expect("valid chapter"),
+            process_code_blocks(
+                &chapter,
+                &mut Exporter::new(".".into(), "html", Output::Auto)
+            )
+            .expect("valid chapter"),
             content
         );
     }
@@ -246,7 +273,11 @@ mod tests {
         );
         let error = format!(
             "{:#}",
-            process_code_blocks(&chapter).expect_err("unknown saved board")
+            process_code_blocks(
+                &chapter,
+                &mut Exporter::new(".".into(), "html", Output::Auto)
+            )
+            .expect_err("unknown saved board")
         );
         assert!(
             error.contains("Endgames") && error.contains("block 1") && error.contains("missing")

@@ -11,6 +11,7 @@ use tracing_subscriber::{Layer, Registry};
 mod arrows;
 mod chess_preproc;
 mod options;
+mod output;
 mod render;
 
 pub fn make_app() -> Command {
