@@ -250,7 +250,35 @@ fn play_moves(initial: Board, moves: &[String]) -> Result<Vec<(Board, Option<Che
     let mut board = initial;
     let mut positions = vec![(board, None)];
     for san in moves {
-        let chess_move = ChessMove::from_san(&board, san)
+        // chess 3.2 requires " e.p." although PGN 8.2.3.3 uses ordinary capture SAN.
+        // Normalize only pawn captures onto this position's en-passant target;
+        // the dependency still generates and checks the legal move.
+        let basic = san
+            .strip_suffix('+')
+            .or_else(|| san.strip_suffix('#'))
+            .unwrap_or(san);
+        let ep_target = board.en_passant().map(|pawn| {
+            pawn.forward(board.side_to_move())
+                .expect("en-passant pawn is on rank 4 or 5")
+        });
+        let is_ep = ep_target.is_some_and(|target| {
+            basic.len() == 4
+                && (b'a'..=b'h').contains(&basic.as_bytes()[0])
+                && basic.as_bytes()[1] == b'x'
+                && basic.get(2..) == Some(target.to_string().as_str())
+        });
+        let mut notation = if is_ep {
+            format!("{san} e.p.")
+        } else {
+            san.clone()
+        };
+        // The same parser expects a8Q rather than PGN's a8=Q (8.2.3.8).
+        if let Some((prefix, suffix)) = notation.rsplit_once('=') {
+            if matches!(suffix.trim_end_matches(['+', '#']), "Q" | "R" | "B" | "N") {
+                notation = format!("{prefix}{suffix}");
+            }
+        }
+        let chess_move = ChessMove::from_san(&board, &notation)
             .map_err(|e| anyhow!("invalid SAN move '{san}': {e}"))?;
         board = board.make_move_new(chess_move);
         positions.push((board, Some(chess_move)));
@@ -262,6 +290,56 @@ fn play_moves(initial: Board, moves: &[String]) -> Result<Vec<(Board, Option<Che
 mod tests {
     use super::*;
     use chess::Square;
+
+    /// Replay includes the initial state and each legal result; special moves alter all affected squares.
+    #[test]
+    fn replay_special_moves() {
+        let cases = [
+            (
+                "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+                "O-O",
+                Square::G1,
+                chess::Piece::King,
+                Square::H1,
+            ),
+            (
+                "4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1",
+                "exd6",
+                Square::D6,
+                chess::Piece::Pawn,
+                Square::D5,
+            ),
+            (
+                "4k3/P7/8/8/8/8/8/4K3 w - - 0 1",
+                "a8=Q+",
+                Square::A8,
+                chess::Piece::Queen,
+                Square::A7,
+            ),
+        ];
+        for (fen, san, destination, piece, vacated) in cases {
+            let initial = Board::from_str(fen).expect("legal fixture");
+            let positions = play_moves(initial, &[san.into()]).expect("legal move");
+            assert_eq!(positions.len(), 2);
+            assert_eq!(positions[0].0, initial);
+            assert_eq!(positions[1].0.piece_on(destination), Some(piece));
+            assert_eq!(positions[1].0.piece_on(vacated), None);
+            if san == "O-O" {
+                assert_eq!(
+                    positions[1].0.piece_on(Square::F1),
+                    Some(chess::Piece::Rook)
+                );
+            }
+        }
+    }
+
+    /// En-passant normalization must still reject a capture that exposes the player's king.
+    #[test]
+    fn en_passant_cannot_expose_check() {
+        let initial =
+            Board::from_str("k3r3/8/8/3pP3/8/8/8/4K3 w - d6 0 1").expect("legal position");
+        assert!(play_moves(initial, &["exd6".into()]).is_err());
+    }
 
     /// Tables, emphasis and other code fences must survive a nearby chess diagram byte-for-byte.
     #[test]

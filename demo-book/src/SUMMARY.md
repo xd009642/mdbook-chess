@@ -8,3 +8,4 @@
 - [Portable diagrams](./portable.md)
   - [Nested chapter](./nested/portable.md)
 - [Replaying moves](./animation.md)
+- [Special moves](./special-moves.md)

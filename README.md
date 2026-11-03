@@ -36,7 +36,7 @@ Chess boards are specified in YAML:
 * board - "start" or a FEN string for a new position
 * load - a saved board name or "start"; omitted means the starting position
 * save - name to save board under (can be a list)
-* moves - list of moves
+* moves - list of SAN moves, including castling (`O-O`), promotion (`a8=Q+`) and en passant (`exd6`)
 * overwrite - boolean of whether to overwrite saved version of the board with these moves
 * highlights - highlight a square on the board a list of squares
 * lines - lines and arrows from square to square (currently only straight)
