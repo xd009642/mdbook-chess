@@ -8,8 +8,9 @@ use tracing::{info, warn};
 use tracing_subscriber::filter::EnvFilter;
 use tracing_subscriber::{Layer, Registry};
 
-pub mod arrows;
+mod arrows;
 mod chess_preproc;
+mod render;
 
 pub fn make_app() -> Command {
     Command::new(PREPROCESSOR_NAME)
@@ -44,7 +45,7 @@ fn main() {
     if let Some(sub_args) = matches.subcommand_matches("supports") {
         handle_supports(sub_args);
     } else if let Err(e) = handle_preprocessing() {
-        info!("{}", e);
+        tracing::error!("{:#}", e);
         process::exit(1);
     }
 }
@@ -67,9 +68,8 @@ fn handle_preprocessing() -> Result<(), Error> {
     info!("Processing!");
 
     let preproc = ChessPreprocessor;
-    let processed_book = preproc.run(&ctx, book).expect("Failed to preprocess book");
-    let s =
-        serde_json::to_string(&processed_book).expect("Failed to convert processed book to json");
+    let processed_book = preproc.run(&ctx, book)?;
+    let s = serde_json::to_string(&processed_book)?;
     println!("{}", s);
     Ok(())
 }
