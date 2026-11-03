@@ -97,6 +97,29 @@ including in lists and block quotes.
 
 For an example of all the features in use please look to the demo book!
 
+# Presentation
+
+Each chess block can set these optional fields:
+
+| Field | Values / default |
+| --- | --- |
+| `orientation` | `white` (default) or `black`; pieces stay upright |
+| `coordinates` | `true` to show rank/file labels on all sides; default `false` |
+| `theme` | `classic` (default), `green`, `blue`, `monochrome` |
+| `colors` | Override `light`, `dark`, `highlight`, `arrow` with quoted `#RRGGBB` colors |
+| `size` | Width in pixels, 64–2048; default 302, shrinks to fit its container |
+| `align` | `left` (default), `center`, `right` |
+| `caption` | Plain text beneath the board |
+| `alt` | Accessible description; defaults to the side to move and FEN |
+| `last-move` | Highlight the last move in this block; default `false` |
+| `knight-lines` | The same syntax as `lines`, drawn with a right-angle bend; endpoints must be a knight’s move apart |
+| `annotations` | Square-to-assessment map: `brilliant` (!!), `good` (!), `interesting` (!?), `dubious` (?!), `mistake` (?), `blunder` (??) |
+
+Assessments are supplied by the author, not calculated by an engine. Themes use
+explicit colors so diagrams remain legible when exported or printed. Highlight
+squares, arrows and annotations use chess coordinates in either orientation.
+See [the presentation examples](demo-book/src/presentation.md).
+
 # Roadmap
 
 ## Potential future features
@@ -105,12 +128,6 @@ These are features I'd be willing to do if there was demand and they were
 sufficiently easy or willing to accept PRs for.
 
 * GIF generation
-* L shaped move arrow for horsey
-* Chess.com style icons (blunder, excellent etc)
-* Styling and theming
-* More layout options in page
-* Rank and file labels
-* Flip the board
 
 ## Unlikely features
 

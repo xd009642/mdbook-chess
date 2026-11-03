@@ -1,7 +1,8 @@
 use crate::arrows::Line;
+use crate::options::{parse_square, Appearance};
 use crate::render;
 use anyhow::{anyhow, Context};
-use chess::{Board, ChessMove, Square};
+use chess::{Board, ChessMove};
 use mdbook_preprocessor::book::{Book, BookItem, Chapter};
 use mdbook_preprocessor::errors::Error;
 use mdbook_preprocessor::{Preprocessor, PreprocessorContext};
@@ -36,6 +37,10 @@ pub struct BoardBlock {
     /// Arrows. Should be a list of string commands in the form ["a1->a2", "e2<->e4", "a3-g3"]
     #[serde(default)]
     lines: Vec<Line>,
+    #[serde(default, rename = "knight-lines")]
+    knight_lines: Vec<Line>,
+    #[serde(flatten)]
+    appearance: Appearance,
 }
 
 pub struct ChessPreprocessor;
@@ -98,9 +103,8 @@ fn process_code_blocks(chapter: &Chapter) -> Result<String, Error> {
                     format!("chapter '{}', chess block {}", chapter.name, block_number)
                 })?;
                 output.push_str(&chapter.content[copied..start]);
-                output.push_str("<div class=\"chess-board\">");
                 output.push_str(&svg);
-                output.push_str("</div>\n");
+                output.push('\n');
                 copied = range.end;
             }
             _ => {}
@@ -113,6 +117,8 @@ fn process_code_blocks(chapter: &Chapter) -> Result<String, Error> {
 fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Result<String, Error> {
     let block: BoardBlock =
         serde_yaml::from_str(if input.trim().is_empty() { "{}" } else { input })?;
+    block.appearance.validate()?;
+    let mut last_move = None;
     let mut board = match block.board.as_deref() {
         Some("start") => Board::default(),
         Some(fen) => Board::from_str(fen).map_err(|e| anyhow!("invalid FEN in 'board': {e}"))?,
@@ -127,12 +133,33 @@ fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Resu
         let chess_move = ChessMove::from_san(&board, san)
             .map_err(|e| anyhow!("invalid SAN move '{san}': {e}"))?;
         board = board.make_move_new(chess_move);
+        last_move = Some(chess_move);
     }
-    let highlights = block
+    let mut highlights = block
         .highlights
         .iter()
-        .map(|s| Square::from_str(s).map_err(|e| anyhow!("invalid highlight square '{s}': {e}")))
+        .map(|s| parse_square(s))
         .collect::<Result<Vec<_>, _>>()?;
+    if block.appearance.last_move {
+        if let Some(m) = last_move {
+            highlights.extend([m.get_source(), m.get_dest()]);
+        }
+    }
+    for line in &block.knight_lines {
+        let dx = line
+            .start
+            .get_file()
+            .to_index()
+            .abs_diff(line.end.get_file().to_index());
+        let dy = line
+            .start
+            .get_rank()
+            .to_index()
+            .abs_diff(line.end.get_rank().to_index());
+        if !matches!((dx, dy), (1, 2) | (2, 1)) {
+            anyhow::bail!("knight-lines must join squares a knight's move apart");
+        }
+    }
     if let Some(names) = &block.save {
         for name in names.iter() {
             boards.insert(name.clone(), board);
@@ -143,12 +170,20 @@ fn process_chess_block(input: &str, boards: &mut HashMap<String, Board>) -> Resu
             boards.insert(name.clone(), board);
         }
     }
-    Ok(render::board(&board, &highlights, &block.lines))
+    let svg = render::board(
+        &board,
+        &highlights,
+        &block.lines,
+        &block.knight_lines,
+        &block.appearance,
+    );
+    Ok(render::html(&svg, &block.appearance))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chess::Square;
 
     /// Tables, emphasis and other code fences must survive a nearby chess diagram byte-for-byte.
     #[test]
